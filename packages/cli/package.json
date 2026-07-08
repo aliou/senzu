@@ -1,0 +1,25 @@
+{
+  "name": "@senzu/cli",
+  "version": "0.1.0",
+  "description": "Canonical color scheme generator CLI for terminal and editor applications",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx src/cli/index.ts generate",
+    "list": "tsx src/cli/index.ts list",
+    "install:themes": "tsx src/cli/index.ts install",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsdown": "^0.22.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

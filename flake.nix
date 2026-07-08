@@ -18,9 +18,9 @@
       git-hooks,
     }:
     let
-      # Read version from package.json so the theme package and CLI stay in sync.
-      packageJson = builtins.fromJSON (builtins.readFile ./package.json);
-      version = packageJson.version;
+      # Read version from the CLI package so the themes package and CLI stay in sync.
+      cliPackageJson = builtins.fromJSON (builtins.readFile ./packages/cli/package.json);
+      version = cliPackageJson.version;
 
       systemIndependent = {
         homeManagerModules = {
@@ -62,37 +62,22 @@
           };
         };
 
-        # The senzu CLI, built with tsdown and wrapped for nix.
-        senzu-cli = pkgs.buildNpmPackage {
-          pname = "senzu";
-          inherit version;
-
-          src = ./.;
-
-          npmDepsHash = ""; # set after first build; see README
-          dontNpmBuild = true;
-
-          buildPhase = ''
-            runHook preBuild
-            npx tsdown
-            runHook postBuild
-          '';
-
-          installPhase = ''
-            runHook preInstall
-            mkdir -p $out/bin
-            cp dist/cli/index.mjs $out/bin/senzu
-            chmod +x $out/bin/senzu
-            runHook postInstall
-          '';
-
-          meta = with pkgs.lib; {
-            description = "Canonical color scheme generator CLI";
-            license = licenses.mit;
-            platforms = platforms.all;
-            mainProgram = "senzu";
-          };
-        };
+        # Live `senzu` bin for the devShell: runs the CLI through tsx against the
+        # working tree so edits to generators/config take effect immediately.
+        senzu-dev = pkgs.writeShellScriptBin "senzu" ''
+          root="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null)"
+          entry="$root/packages/cli/src/cli/index.ts"
+          if [ -z "$root" ] || [ ! -f "$entry" ]; then
+            echo "senzu: not inside the senzu repo" >&2
+            exit 1
+          fi
+          tsx="$root/node_modules/.bin/tsx"
+          if [ ! -x "$tsx" ]; then
+            echo "senzu: tsx missing - run 'pnpm install' in $root" >&2
+            exit 1
+          fi
+          exec "$tsx" "$entry" "$@"
+        '';
 
         pre-commit-check = git-hooks.lib.${system}.run {
           src = ./.;
@@ -109,7 +94,7 @@
             typecheck = {
               enable = true;
               name = "typecheck";
-              entry = "${pkgs.nodejs_24}/bin/npx tsc --noEmit";
+              entry = "${pkgs.nodejs_24}/bin/npx tsc -p packages/cli --noEmit";
               files = "\\.ts$";
               pass_filenames = false;
             };
@@ -120,14 +105,14 @@
               entry = ''
                 ${pkgs.bash}/bin/bash -c '
                   set -e
-                  ${pkgs.nodejs_24}/bin/npx tsx src/cli/index.ts generate -o . > /dev/null
+                  ${pkgs.nodejs_24}/bin/npx tsx packages/cli/src/cli/index.ts generate -o . > /dev/null
                   if ! ${pkgs.git}/bin/git diff --exit-code -- share/; then
                     echo "share/ is out of date. Run: pnpm generate"
                     exit 1
                   fi
                 '
               '';
-              files = "(config\\.json|src/generators/.*\\.ts|src/core/.*\\.ts)";
+              files = "(config\\.json|packages/cli/src/generators/.*\\.ts|packages/cli/src/core/.*\\.ts)";
               pass_filenames = false;
             };
             # Fail if pnpm-lock.yaml is out of date.
@@ -140,7 +125,7 @@
                   ${pkgs.nodejs_24}/bin/npm exec -- pnpm install --frozen-lockfile --ignore-scripts
                 '
               '';
-              files = "(package\\.json|pnpm-lock\\.yaml)";
+              files = "(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml)";
               pass_filenames = false;
             };
           };
@@ -154,12 +139,6 @@
         packages = {
           default = themes;
           themes = themes;
-          senzu = senzu-cli;
-        };
-
-        apps.default = {
-          type = "app";
-          program = "${senzu-cli}/bin/senzu";
         };
 
         devShells.default = pkgs.mkShell {
@@ -167,6 +146,7 @@
           packages = with pkgs; [
             nodejs_24
             pnpm
+            senzu-dev
           ];
         };
       }
