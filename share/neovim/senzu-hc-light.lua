@@ -17,7 +17,7 @@ vim.g.terminal_color_4 = '#1a3a80'
 vim.g.terminal_color_5 = '#4a2090'
 vim.g.terminal_color_6 = '#306070'
 vim.g.terminal_color_7 = '#000000'
-vim.g.terminal_color_8 = '#707070'
+vim.g.terminal_color_8 = '#404040'
 vim.g.terminal_color_9 = '#8a1010'
 vim.g.terminal_color_10 = '#1f5d10'
 vim.g.terminal_color_11 = '#8a5000'
@@ -56,7 +56,7 @@ vim.api.nvim_set_hl(0, 'Pmenu', { fg = '#000000', bg = '#fafafa' })
 vim.api.nvim_set_hl(0, 'PmenuSel', { fg = '#fafafa', bg = '#4a6070' })
 
 -- Syntax highlighting
-vim.api.nvim_set_hl(0, 'Comment', { fg = '#707070', italic = true })
+vim.api.nvim_set_hl(0, 'Comment', { fg = '#404040', italic = true })
 vim.api.nvim_set_hl(0, 'String', { fg = '#507020' })
 vim.api.nvim_set_hl(0, 'Number', { fg = '#8a3a10' })
 vim.api.nvim_set_hl(0, 'Constant', { fg = '#8a3a10' })
