@@ -60,7 +60,12 @@ jobs:
         id: version
         run: |
           pnpm changeset version
-          VERSION=$(jq -r '.version' package.json)
+          # Changesets only versions @senzu/cli (the root isn't in the
+          # workspace package graph). Keep the root package.json version
+          # in sync so the release tag (read from root) matches the CLI.
+          CLI_VERSION=$(jq -r '.version' packages/cli/package.json)
+          jq --arg v "$CLI_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          VERSION="$CLI_VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release PR
