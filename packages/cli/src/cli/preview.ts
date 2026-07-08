@@ -1,4 +1,5 @@
 import type { Palette } from "../core/types";
+import { SAMPLES, type Sample, type Span } from "./samples";
 
 /* ------------------------------------------------------------------ *
  * Preview
@@ -137,8 +138,48 @@ function section(title: string): void {
   write();
 }
 
+/** Map a syntax role to a palette color, falling back to foreground. */
+function roleColor(p: Palette, role: Span[0]): string {
+  const key = role as keyof typeof p.syntax;
+  return p.syntax[key] ?? p.foreground;
+}
+
+/** Render a bat-style, syntax-highlighted code listing. */
+function renderSample(p: Palette, sample: Sample): void {
+  const gutter = p.colors.zambezi ?? "#605958";
+  const total = sample.lines.length;
+  const numW = String(total).length;
+  const termWidth = process.stdout.columns || 80;
+
+  // Top border + file header, like `bat`.
+  const rule = "─".repeat(Math.max(termWidth - 9, 10));
+  write(`  ${fg(gutter, "───────┬")}${fg(gutter, rule)}`);
+  write(
+    `  ${fg(gutter, "       │")} ${muted(p, "File:")} ${fg(p.foreground, sample.path)}`,
+  );
+  write(`  ${fg(gutter, "───────┼")}${fg(gutter, rule)}`);
+
+  for (let i = 0; i < sample.lines.length; i++) {
+    const line = sample.lines[i];
+    const num = String(i + 1).padStart(numW, " ");
+    let body = "";
+    if (line) {
+      for (const [role, text] of line) {
+        const col = roleColor(p, role);
+        body +=
+          role === "comment"
+            ? `\x1b[3m${fg(col, text)}${RESET}`
+            : fg(col, text);
+      }
+    }
+    write(`  ${fg(gutter, `${num}   │`)} ${body}`);
+  }
+  write(`  ${fg(gutter, "───────┴")}${fg(gutter, rule)}`);
+  write();
+}
+
 function renderPalette(p: Palette): void {
-  const { ansi, ansi_bright, syntax, semantic, ui } = p;
+  const { ansi, ansi_bright, semantic, ui } = p;
   /** Theme-adaptive muted label. */
   const m = (s: string) => muted(p, s);
 
@@ -185,22 +226,10 @@ function renderPalette(p: Palette): void {
   }
   if (line) write(line);
 
-  // A small themed code sample, colored with the syntax palette.
+  // A bat-style, syntax-highlighted code listing colored by the palette.
   section("Code sample");
-  const sx = (key: string) => syntax[key] ?? p.foreground;
-  write(
-    `  ${m("1 ")}${fg(sx("keyword"), "const")} ${fg(p.foreground, "greet")} ${fg(sx("operator"), "=")} ${fg(sx("keyword"), "async")} ${fg(sx("function"), "(")}${m(") =>")} ${m("{")}`,
-  );
-  write(
-    `  ${m("2   ")}${fg(sx("function"), "render")}(${fg(sx("variable"), "name")}${m(":")} ${fg(sx("type"), "string")})`,
-  );
-  write(
-    `  ${m("3     ")}${fg(sx("comment"), "// styled by the ")}${fg(sx("comment"), "senzu palette")}`,
-  );
-  write(
-    `  ${m("4     ")}${fg(sx("keyword"), "return")} ${fg(sx("string"), '"hello, world"')}${m(";")}`,
-  );
-  write(`  ${m("5 ")}${m("}")}`);
+  const sample = SAMPLES[0];
+  if (sample) renderSample(p, sample);
 
   // Semantic + accents as single-line swatches.
   section("Semantic");
