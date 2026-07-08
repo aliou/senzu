@@ -10,7 +10,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { getPalettes, loadConfig } from "../core/config";
+import { getPalettes, getPalettesOrdered, loadConfig } from "../core/config";
 import {
   getAllGenerators,
   getGenerator,
@@ -162,7 +162,7 @@ async function preview(
 ): Promise<void> {
   const configPath = resolve(options.config);
   const config = loadConfig(configPath);
-  const palettes = getPalettes(config);
+  const palettes = getPalettesOrdered(config);
 
   await runPreview(palettes, variant);
 }
