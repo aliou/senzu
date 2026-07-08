@@ -151,13 +151,19 @@ function renderSample(p: Palette, sample: Sample): void {
   const numW = String(total).length;
   const termWidth = process.stdout.columns || 80;
 
+  // Gutter layout: "<numW>   │" — derive every width from numW so the
+  // junctions (┬/┼/┴) line up with the per-line │ exactly.
+  const pad = " ".repeat(numW + 3);
+  const dash = "─".repeat(numW + 3);
+  const ruleW = Math.max(termWidth - (dash.length + 3), 10);
+  const rule = "─".repeat(ruleW);
+
   // Top border + file header, like `bat`.
-  const rule = "─".repeat(Math.max(termWidth - 9, 10));
-  write(`  ${fg(gutter, "───────┬")}${fg(gutter, rule)}`);
+  write(`  ${fg(gutter, `${dash}┬`)}${fg(gutter, rule)}`);
   write(
-    `  ${fg(gutter, "       │")} ${muted(p, "File:")} ${fg(p.foreground, sample.path)}`,
+    `  ${fg(gutter, `${pad}│`)} ${muted(p, "File:")} ${fg(p.foreground, sample.path)}`,
   );
-  write(`  ${fg(gutter, "───────┼")}${fg(gutter, rule)}`);
+  write(`  ${fg(gutter, `${dash}┼`)}${fg(gutter, rule)}`);
 
   for (let i = 0; i < sample.lines.length; i++) {
     const line = sample.lines[i];
@@ -174,7 +180,7 @@ function renderSample(p: Palette, sample: Sample): void {
     }
     write(`  ${fg(gutter, `${num}   │`)} ${body}`);
   }
-  write(`  ${fg(gutter, "───────┴")}${fg(gutter, rule)}`);
+  write(`  ${fg(gutter, `${dash}┴`)}${fg(gutter, rule)}`);
   write();
 }
 
@@ -374,6 +380,7 @@ function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
       stdin.setRawMode(false);
       stdin.pause();
       stdin.removeListener("data", onData);
+      process.stdout.removeListener("resize", render);
       process.removeListener("exit", cleanup);
       process.removeListener("SIGINT", killAll);
       process.removeListener("SIGTERM", killAll);
@@ -417,6 +424,7 @@ function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
     process.on("exit", cleanup);
     process.on("SIGINT", killAll);
     process.on("SIGTERM", killAll);
+    process.stdout.on("resize", render);
 
     stdin.setRawMode(true);
     stdin.resume();
