@@ -4,6 +4,9 @@
   "description": "Canonical color scheme generator CLI for terminal and editor applications",
   "private": true,
   "type": "module",
+  "bin": {
+    "senzu": "./dist/index.mjs"
+  },
   "scripts": {
     "generate": "tsx src/cli/index.ts generate",
     "list": "tsx src/cli/index.ts list",

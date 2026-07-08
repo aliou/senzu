@@ -23,19 +23,29 @@ interface Options {
   output: string;
 }
 
-/** Resolve the package.json sibling to this module and read its version. */
+/**
+ * Resolve the @senzu/cli package.json by walking up from this module's
+ * directory. Robust to both the source layout (packages/cli/src/cli/) and
+ * the bundled layout (packages/cli/dist/), which sit at different depths.
+ */
 function readPackageVersion(): string {
-  // src/cli/index.ts -> ../../package.json (the @senzu/cli package.json).
-  const here = dirname(fileURLToPath(import.meta.url));
-  const pkgPath = resolve(here, "..", "..", "package.json");
-  try {
-    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
-      version?: string;
-    };
-    return pkg.version ?? "0.0.0";
-  } catch {
-    return "0.0.0";
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 6; i++) {
+    const pkgPath = join(dir, "package.json");
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
+        name?: string;
+        version?: string;
+      };
+      if (pkg.name === "@senzu/cli") return pkg.version ?? "0.0.0";
+    } catch {
+      // not found here; keep walking up
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
+  return "0.0.0";
 }
 
 async function main(): Promise<void> {
