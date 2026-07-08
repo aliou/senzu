@@ -1,0 +1,107 @@
+name: Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: "Force create release for current version"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for changesets
+        id: check
+        run: |
+          if ls .changeset/*.md 1>/dev/null 2>&1; then
+            count=$(ls .changeset/*.md 2>/dev/null | grep -v README.md | wc -l)
+            if [ "$count" -gt "0" ]; then
+              echo "hasChangesets=true" >> $GITHUB_OUTPUT
+            else
+              echo "hasChangesets=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "hasChangesets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Version
+        if: steps.check.outputs.hasChangesets == 'true'
+        id: version
+        run: |
+          pnpm changeset version
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release PR
+        if: steps.version.outputs.version
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "release: v${{ steps.version.outputs.version }}"
+          title: "release: v${{ steps.version.outputs.version }}"
+          body: |
+            This PR was auto-generated to release v${{ steps.version.outputs.version }}.
+
+            Merging will create a git tag and GitHub release.
+          branch: release/v${{ steps.version.outputs.version }}
+          delete-branch: true
+
+      - name: Release
+        if: steps.check.outputs.hasChangesets == 'false' || inputs.force_release
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          TAG="v${VERSION}"
+
+          # Skip if tag already exists (unless force_release)
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            if [ "${{ inputs.force_release }}" != "true" ]; then
+              echo "Tag ${TAG} already exists, skipping"
+              exit 0
+            fi
+          fi
+
+          echo "Releasing ${TAG}..."
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Create tag and release
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
