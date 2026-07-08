@@ -1,14 +1,28 @@
 import type { Palette } from "../core/types";
 
-/* ------------------------------------------------------------------ */
-/* ANSI / color helpers                                                */
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * Preview
+ *
+ * Re-themes the whole terminal for the selected palette: the terminal's
+ * default background / foreground / cursor and the 16-color ANSI palette
+ * are changed via OSC sequences, the screen is cleared so the new
+ * background fills the window, and themed content is rendered on top.
+ *
+ * On exit the original colors are restored with the matching OSC reset
+ * sequences (110/111/112/104) — no terminal querying required.
+ * ------------------------------------------------------------------ */
 
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 const DIM = "\x1b[2m";
+
 const HIDE_CURSOR = "\x1b[?25l";
 const SHOW_CURSOR = "\x1b[?25h";
+const ENTER_ALT = "\x1b[?1049h";
+const LEAVE_ALT = "\x1b[?1049l";
+const CLEAR_SCREEN = "\x1b[2J\x1b[H";
+const CLEAR_LINE = "\x1b[2K\r";
+const ST = "\x1b\\"; // OSC string terminator
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace("#", "").slice(0, 6);
@@ -16,208 +30,222 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff];
 }
 
-function rgb(hex: string): string {
+/** XParseColor spec: rgb:RR/GG/BB (2-digit uppercase). */
+function oscSpec(hex: string): string {
   const [r, g, b] = hexToRgb(hex);
-  return `${r};${g};${b}`;
+  const h = (n: number) => n.toString(16).padStart(2, "0").toUpperCase();
+  return `rgb:${h(r)}/${h(g)}/${h(b)}`;
 }
 
-/** Colored background run. */
-function bg(hex: string, text: string): string {
-  return `\x1b[48;2;${rgb(hex)}m${text}${RESET}`;
+/** Set terminal default foreground (OSC 10). */
+function setFg(hex: string): string {
+  return `\x1b]10;${oscSpec(hex)}${ST}`;
+}
+/** Set terminal default background (OSC 11). */
+function setBg(hex: string): string {
+  return `\x1b]11;${oscSpec(hex)}${ST}`;
+}
+/** Set terminal cursor color (OSC 12). */
+function setCursor(hex: string): string {
+  return `\x1b]12;${oscSpec(hex)}${ST}`;
+}
+/** Set a single ANSI palette slot (OSC 4 ; n ; spec). */
+function setPalette(n: number, hex: string): string {
+  return `\x1b]4;${n};${oscSpec(hex)}${ST}`;
 }
 
-/** Colored foreground run. */
+/** Truecolor foreground run. */
 function fg(hex: string, text: string): string {
-  return `\x1b[38;2;${rgb(hex)}m${text}${RESET}`;
+  const [r, g, b] = hexToRgb(hex);
+  return `\x1b[38;2;${r};${g};${b}m${text}${RESET}`;
 }
 
-/** Foreground + background together. */
+/** Truecolor foreground+background run. */
 function fb(fgHex: string, bgHex: string, text: string): string {
-  return `\x1b[38;2;${rgb(fgHex)};\x1b[48;2;${rgb(bgHex)}m${text}${RESET}`;
+  const [fr, fg2, fb2] = hexToRgb(fgHex);
+  const [br, bg2, bb2] = hexToRgb(bgHex);
+  return `\x1b[38;2;${fr};${fg2};${fb2};48;2;${br};${bg2};${bb2}m${text}${RESET}`;
 }
 
-/** Pick a legible foreground (black/white) for a given background hex. */
+/** Muted run: dim the palette's foreground for labels/footers. */
+function muted(p: Palette, text: string): string {
+  return `${DIM}${fg(p.foreground, text)}${RESET}`;
+}
+
+/** Readable text color (black/white) for a given background. */
 function readableFg(bgHex: string): string {
   const [r, g, b] = hexToRgb(bgHex);
-  // Relative luminance (sRGB) -> perceived brightness.
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.55 ? "#000000" : "#ffffff";
 }
 
-const BLOCK = "        "; // 8-space swatch
-const CELL_W = 26;
+/* ------------------------------------------------------------------ *
+ * Apply / restore terminal theme
+ * ------------------------------------------------------------------ */
 
-function cell(label: string, hex: string): string {
-  const swatch = fb(
-    readableFg(hex),
-    hex,
-    BLOCK.slice(0, 4) + hex.slice(1) + BLOCK.slice(0, 4),
-  );
-  const padded = label.padEnd(CELL_W - 8);
-  return `  ${swatch} ${fg(hex, padded)}${DIM}${hex}${RESET}`;
+function applyTerminalTheme(p: Palette): void {
+  // Default fg/bg/cursor.
+  let out = setFg(p.foreground) + setBg(p.background) + setCursor(p.cursor);
+  // 16-color ANSI palette.
+  const a = p.ansi;
+  const b = p.ansi_bright;
+  const slots: Array<[number, string]> = [
+    [0, a.black],
+    [1, a.red],
+    [2, a.green],
+    [3, a.yellow],
+    [4, a.blue],
+    [5, a.magenta],
+    [6, a.cyan],
+    [7, a.white],
+    [8, b.black],
+    [9, b.red],
+    [10, b.green],
+    [11, b.yellow],
+    [12, b.blue],
+    [13, b.magenta],
+    [14, b.cyan],
+    [15, b.white],
+  ];
+  for (const [n, hex] of slots) out += setPalette(n, hex);
+  out += CLEAR_SCREEN;
+  process.stdout.write(out);
 }
 
-/* ------------------------------------------------------------------ */
-/* Palette rendering                                                   */
-/* ------------------------------------------------------------------ */
-
-function clearScreen(): void {
-  process.stdout.write("\x1b[2J\x1b[H");
+function restoreTerminalTheme(): void {
+  // Reset default fg/bg/cursor and the whole ANSI palette to the
+  // terminal's configured defaults. Supported by xterm, Ghostty, etc.
+  const out =
+    `\x1b]110${ST}` + // reset default fg
+    `\x1b]111${ST}` + // reset default bg
+    `\x1b]112${ST}` + // reset cursor color
+    `\x1b]104${ST}` + // reset all palette colors
+    CLEAR_SCREEN;
+  process.stdout.write(out);
 }
+
+/* ------------------------------------------------------------------ *
+ * Rendering (themed content over the themed background)
+ * ------------------------------------------------------------------ */
 
 function write(line = ""): void {
   process.stdout.write(`${line}\n`);
 }
 
-function header(p: Palette): void {
-  const title = fb(readableFg(p.background), p.background, ` ${p.name} `);
-  write();
-  write(`  ${BOLD}${title}${RESET}  ${DIM}(${p.appearance})${RESET}`);
-  write();
-}
-
 function section(title: string): void {
-  write();
-  write(`  ${BOLD}${title}${RESET}`);
+  write(`  ${BOLD}${DIM}${title}${RESET}`);
   write();
 }
 
 function renderPalette(p: Palette): void {
   const { ansi, ansi_bright, syntax, semantic, ui } = p;
+  /** Theme-adaptive muted label. */
+  const m = (s: string) => muted(p, s);
 
-  clearScreen();
-  header(p);
+  process.stdout.write(CLEAR_SCREEN);
 
-  // Core surface colors with sample text.
-  section("Surfaces");
-  const sample = " Aa ";
-  const surfaces: Array<[string, string, string]> = [
-    [
-      "background",
-      p.background,
-      bg(p.background, fg(p.foreground, `${sample}fg/bg`)),
-    ],
-    ["cursor", p.cursor, fb(p.cursor_text, p.cursor, `${sample}cursor`)],
-    [
-      "selection",
-      p.selection_background,
-      fb(p.selection_foreground, p.selection_background, `${sample}selection`),
-    ],
+  // Header
+  const accent = p.accents[0] ?? p.foreground;
+  write(`  ${BOLD}${fg(accent, p.name)}${RESET}  ${m(`(${p.appearance})`)}`);
+
+  // ANSI 16 as filled cells.
+  section("ANSI 16-color");
+  const cells: Array<[string, string, number]> = [
+    ["black", ansi.black, 0],
+    ["red", ansi.red, 1],
+    ["green", ansi.green, 2],
+    ["yellow", ansi.yellow, 3],
+    ["blue", ansi.blue, 4],
+    ["magenta", ansi.magenta, 5],
+    ["cyan", ansi.cyan, 6],
+    ["white", ansi.white, 7],
+    ["br-black", ansi_bright.black, 8],
+    ["br-red", ansi_bright.red, 9],
+    ["br-green", ansi_bright.green, 10],
+    ["br-yellow", ansi_bright.yellow, 11],
+    ["br-blue", ansi_bright.blue, 12],
+    ["br-magenta", ansi_bright.magenta, 13],
+    ["br-cyan", ansi_bright.cyan, 14],
+    ["br-white", ansi_bright.white, 15],
   ];
-  for (const [, hex, swatch] of surfaces) {
-    write(`  ${swatch}  ${fg(hex, "surface".padEnd(14))}${DIM}${hex}${RESET}`);
-  }
-
-  // ANSI 16 colors.
-  section("ANSI");
-  const ansiEntries: Array<[string, string]> = [
-    ["black", ansi.black],
-    ["red", ansi.red],
-    ["green", ansi.green],
-    ["yellow", ansi.yellow],
-    ["blue", ansi.blue],
-    ["magenta", ansi.magenta],
-    ["cyan", ansi.cyan],
-    ["white", ansi.white],
-  ];
-  writeCells(ansiEntries);
-
-  write();
-  const brightEntries: Array<[string, string]> = [
-    ["black", ansi_bright.black],
-    ["red", ansi_bright.red],
-    ["green", ansi_bright.green],
-    ["yellow", ansi_bright.yellow],
-    ["blue", ansi_bright.blue],
-    ["magenta", ansi_bright.magenta],
-    ["cyan", ansi_bright.cyan],
-    ["white", ansi_bright.white],
-  ];
-  writeCells(brightEntries);
-
-  // Syntax with representative samples.
-  section("Syntax");
-  const sx = (key: string, sample: string): [string, string, string] => [
-    key,
-    syntax[key] ?? p.foreground,
-    sample,
-  ];
-  const syntaxEntries: Array<[string, string, string]> = [
-    sx("comment", "// a comment"),
-    sx("string", '"a string"'),
-    sx("number", "42"),
-    sx("keyword", "const"),
-    sx("function", "fn()"),
-    sx("type", "Type"),
-    sx("operator", "=>"),
-    sx("constant", "PI"),
-  ];
-  for (const [label, hex, sampleText] of syntaxEntries) {
-    const swatch = fb(readableFg(hex), hex, "  ◆  ");
-    write(`  ${swatch}  ${fg(hex, label.padEnd(12))}${fg(hex, sampleText)}`);
-  }
-
-  // Semantic.
-  section("Semantic");
-  writeCells([
-    ["error", semantic.error],
-    ["warning", semantic.warning],
-    ["info", semantic.info],
-    ["hint", semantic.hint],
-    ["ok", semantic.ok],
-  ]);
-
-  // Accents.
-  if (p.accents.length > 0) {
-    section("Accents");
-    write();
-    const accentSwatches = p.accents
-      .map((a) => fb(readableFg(a), a, "      "))
-      .join(" ");
-    write(`  ${accentSwatches}`);
-    write();
-    write(`  ${p.accents.map((a, i) => fg(a, String(i + 1))).join("  ")}`);
-  }
-
-  // Editor chrome (line, status, etc.) where available.
-  section("Editor chrome");
-  const chrome: Array<[string, string]> = [];
-  const activeLine = ui["editor.active_line.background"];
-  const lineNr = ui["editor.line_number"];
-  const activeLineNr = ui["editor.active_line_number"];
-  const statusBar = ui["status_bar.background"];
-  if (activeLine) chrome.push(["active line", activeLine]);
-  if (lineNr) chrome.push(["line number", lineNr]);
-  if (activeLineNr) chrome.push(["active line nr", activeLineNr]);
-  if (statusBar) chrome.push(["status bar", statusBar]);
-  writeCells(chrome.length > 0 ? chrome : [["(none defined)", "#888888"]]);
-
-  write();
-  write(
-    `  ${DIM}Press a palette index / ↑↓ Enter to switch · q to quit${RESET}`,
-  );
-  write();
-}
-
-function writeCells(entries: Array<[string, string]>): void {
-  const cols = Math.max(1, Math.floor((process.stdout.columns || 80) / CELL_W));
+  const termWidth = process.stdout.columns || 80;
+  const cellW = 14;
+  const cols = Math.max(1, Math.floor(termWidth / cellW));
   let line = "";
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
+  for (let i = 0; i < cells.length; i++) {
+    const entry = cells[i];
     if (!entry) continue;
-    const [label, hex] = entry;
-    line += cell(label, hex);
+    const [label, hex, idx] = entry;
+    const block = fb(readableFg(hex), hex, ` ${idx < 10 ? " " : ""}${idx} `);
+    line += `  ${block} ${fg("#888888", label.padEnd(8))}`;
     if ((i + 1) % cols === 0) {
       write(line);
       line = "";
     }
   }
   if (line) write(line);
+
+  // A small themed code sample, colored with the syntax palette.
+  section("Code sample");
+  const sx = (key: string) => syntax[key] ?? p.foreground;
+  write(
+    `  ${m("1 ")}${fg(sx("keyword"), "const")} ${fg(p.foreground, "greet")} ${fg(sx("operator"), "=")} ${fg(sx("keyword"), "async")} ${fg(sx("function"), "(")}${m(") =>")} ${m("{")}`,
+  );
+  write(
+    `  ${m("2   ")}${fg(sx("function"), "render")}(${fg(sx("variable"), "name")}${m(":")} ${fg(sx("type"), "string")})`,
+  );
+  write(
+    `  ${m("3     ")}${fg(sx("comment"), "// styled by the ")}${fg(sx("comment"), "senzu palette")}`,
+  );
+  write(
+    `  ${m("4     ")}${fg(sx("keyword"), "return")} ${fg(sx("string"), '"hello, world"')}${m(";")}`,
+  );
+  write(`  ${m("5 ")}${m("}")}`);
+
+  // Semantic + accents as single-line swatches.
+  section("Semantic");
+  const sem: Array<[string, string]> = [
+    ["error", semantic.error],
+    ["warning", semantic.warning],
+    ["info", semantic.info],
+    ["hint", semantic.hint],
+    ["ok", semantic.ok],
+  ];
+  write(
+    "  " +
+      sem
+        .map(([label, hex]) => fb(readableFg(hex), hex, ` ${label} `))
+        .join(" "),
+  );
+  write();
+
+  section("Accents");
+  if (p.accents.length > 0) {
+    write(
+      `  ${p.accents.map((a) => fb(readableFg(a), a, "      ")).join(" ")}`,
+    );
+    write(`  ${p.accents.map((a, i) => fg(a, String(i + 1))).join("  ")}`);
+  }
+
+  // Editor chrome values, for reference.
+  section("Editor surface");
+  const surf: Array<[string, string | undefined]> = [
+    ["background", p.background],
+    ["active line", ui["editor.active_line.background"] ?? undefined],
+    ["status bar", ui["status_bar.background"] ?? undefined],
+    ["surface", ui["surface.background"] ?? undefined],
+  ];
+  for (const [label, hex] of surf) {
+    if (!hex) continue;
+    write(
+      `  ${fb(readableFg(hex), hex, "  --  ")} ${m(label.padEnd(12))} ${m(hex)}`,
+    );
+  }
 }
 
-/* ------------------------------------------------------------------ */
-/* Interactive picker                                                  */
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * Entry points
+ * ------------------------------------------------------------------ */
 
 export async function runPreview(
   palettes: Palette[],
@@ -227,8 +255,7 @@ export async function runPreview(
     throw new Error("No palettes available to preview.");
   }
 
-  let index = 0;
-  // Allow `senzu preview senzu-hc-light` to jump straight in.
+  let start = 0;
   if (preselected) {
     const found = palettes.findIndex(
       (p) => p.name.toLowerCase().replace(/\s+/g, "-") === preselected,
@@ -236,27 +263,63 @@ export async function runPreview(
     if (found === -1) {
       throw new Error(`No palette matching: ${preselected}`);
     }
-    index = found;
+    start = found;
   }
 
-  // Non-interactive: just render once and exit.
-  if (!process.stdin.isTTY || preselected) {
-    const current = palettes[index];
-    if (current) renderPalette(current);
+  // Non-interactive: render a static reference (no OSC), for piped output.
+  if (!process.stdin.isTTY) {
+    const first = palettes[start];
+    if (first) staticRender(first);
     return;
   }
 
-  await interactiveLoop(palettes, index);
+  await interactiveLoop(palettes, start);
+}
+
+/** Static, no-OSC render: prints themed swatches for piping. */
+function staticRender(p: Palette): void {
+  const out: string[] = [];
+  out.push(`${BOLD}${p.name}${RESET}  ${DIM}(${p.appearance})${RESET}`);
+  out.push("");
+  out.push("ANSI:");
+  const all: Array<[string, string]> = [
+    ["black", p.ansi.black],
+    ["red", p.ansi.red],
+    ["green", p.ansi.green],
+    ["yellow", p.ansi.yellow],
+    ["blue", p.ansi.blue],
+    ["magenta", p.ansi.magenta],
+    ["cyan", p.ansi.cyan],
+    ["white", p.ansi.white],
+    ["bright black", p.ansi_bright.black],
+    ["bright white", p.ansi_bright.white],
+  ];
+  for (const [label, hex] of all) {
+    out.push(`  ${fb(readableFg(hex), hex, "      ")} ${hex} ${label}`);
+  }
+  process.stdout.write(`${out.join("\n")}\n`);
 }
 
 function keyPress(buf: Buffer): string {
   const s = buf.toString("utf8");
   if (s === "\r" || s === "\n") return "enter";
-  if (s === "q" || s === "\x03" || s === "\x1b") return "quit";
+  if (s === "q" || s === "\x1b" || s === "\x03") return "quit";
   if (s === "\x1b[A" || s === "k") return "up";
   if (s === "\x1b[B" || s === "j") return "down";
   if (s >= "0" && s <= "9") return `num:${s}`;
   return "";
+}
+
+function renderFooter(palettes: Palette[], index: number): void {
+  // A compact one-line palette strip; active palette highlighted.
+  const names = palettes
+    .map((p, i) =>
+      i === index
+        ? fb(readableFg(p.cursor), p.cursor, ` ${p.name} `)
+        : `${DIM} ${p.name} ${RESET}`,
+    )
+    .join(" ");
+  process.stdout.write(`${CLEAR_LINE}${names}\n`);
 }
 
 function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
@@ -264,30 +327,31 @@ function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
     const stdin = process.stdin;
     let index = start;
 
-    // Show a palette picker line at the bottom of the current render.
-    const renderFooter = () => {
-      const names = palettes
-        .map((p, i) =>
-          i === index
-            ? bg(p.cursor, ` ${p.name} `)
-            : `${DIM} ${p.name} ${RESET}`,
-        )
-        .join(" ");
-      process.stdout.write(`\x1b[2K\r${names}`);
-    };
-
     const render = () => {
       const current = palettes[index];
-      if (current) renderPalette(current);
-      renderFooter();
+      if (!current) return;
+      // Re-theme the terminal so the whole background updates.
+      applyTerminalTheme(current);
+      renderPalette(current);
+      write();
+      write(`  ${DIM}↑/↓ switch · 1-9 jump · q quit${RESET}`);
+      write();
+      renderFooter(palettes, index);
     };
 
-    render();
+    const cleanup = () => {
+      restoreTerminalTheme();
+      process.stdout.write(SHOW_CURSOR + LEAVE_ALT);
+      stdin.setRawMode(false);
+      stdin.pause();
+      stdin.removeListener("data", onData);
+      process.removeListener("exit", cleanup);
+      process.removeListener("SIGINT", killAll);
+      process.removeListener("SIGTERM", killAll);
+      resolve();
+    };
 
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding("utf8");
-    process.stdout.write(HIDE_CURSOR);
+    const killAll = () => process.exit(0);
 
     const onData = (buf: Buffer) => {
       const action = keyPress(buf);
@@ -304,7 +368,6 @@ function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
           render();
           break;
         case "enter":
-          // No-op in single preview: palette already rendered.
           break;
         default:
           if (action.startsWith("num:")) {
@@ -318,18 +381,17 @@ function interactiveLoop(palettes: Palette[], start: number): Promise<void> {
       }
     };
 
-    const cleanup = () => {
-      process.stdout.write(SHOW_CURSOR);
-      stdin.setRawMode(false);
-      stdin.pause();
-      stdin.removeListener("data", onData);
-      // Leave a clean line after exit.
-      process.stdout.write("\x1b[2K\r");
-      resolve();
-      // eslint-disable-next-line no-process-exit, n/no-process-exit
-      process.exit(0);
-    };
+    // Enter alt screen, then render (which themes the terminal).
+    process.stdout.write(ENTER_ALT + HIDE_CURSOR);
+    render();
 
+    process.on("exit", cleanup);
+    process.on("SIGINT", killAll);
+    process.on("SIGTERM", killAll);
+
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
     stdin.on("data", onData);
   });
 }
