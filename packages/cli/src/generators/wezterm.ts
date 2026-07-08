@@ -1,4 +1,13 @@
 import type { Palette } from "../core/types";
+import {
+  border,
+  elementHover,
+  scrollbarThumb,
+  surface,
+  tabBar,
+  textAccent,
+  textMuted,
+} from "../core/ui";
 import { PerPaletteGenerator } from "./base";
 
 /**
@@ -11,14 +20,14 @@ export class WeztermGenerator extends PerPaletteGenerator {
   fileExtension = ".toml";
 
   generate(palette: Palette): string {
-    const { ansi, ansi_bright, ui } = palette;
-    const scrollbar = ui.scrollbar_thumb ?? ui.border ?? "#404040";
-    const split = ui.border ?? "#404040";
-    const surface = ui.surface ?? "#1c1c1c";
-    const tabBar = ui.tab_bar ?? palette.background;
-    const textAccent = ui.text_accent ?? palette.ansi.cyan;
-    const textMuted = ui.text_muted ?? "#888888";
-    const elementHover = ui.element_hover ?? "#404040";
+    const { ansi, ansi_bright } = palette;
+    const scrollbar = scrollbarThumb(palette);
+    const split = border(palette);
+    const surfaceBg = surface(palette);
+    const tabBarCol = tabBar(palette);
+    const textAccentCol = textAccent(palette);
+    const textMutedCol = textMuted(palette);
+    const elementHoverCol = elementHover(palette);
     const variant = palette.name.toLowerCase().replace(/\s+/g, "-");
 
     return `# Senzu Theme: ${palette.name}
@@ -66,26 +75,26 @@ brights = [
 ]
 
 [colors.tab_bar]
-background = '${tabBar}'
+background = '${tabBarCol}'
 
 [colors.tab_bar.active_tab]
-bg_color = '${textAccent}'
+bg_color = '${textAccentCol}'
 fg_color = '${palette.background}'
 
 [colors.tab_bar.inactive_tab]
-bg_color = '${surface}'
-fg_color = '${textMuted}'
+bg_color = '${surfaceBg}'
+fg_color = '${textMutedCol}'
 
 [colors.tab_bar.inactive_tab_hover]
-bg_color = '${elementHover}'
+bg_color = '${elementHoverCol}'
 fg_color = '${palette.foreground}'
 
 [colors.tab_bar.new_tab]
-bg_color = '${surface}'
-fg_color = '${textMuted}'
+bg_color = '${surfaceBg}'
+fg_color = '${textMutedCol}'
 
 [colors.tab_bar.new_tab_hover]
-bg_color = '${elementHover}'
+bg_color = '${elementHoverCol}'
 fg_color = '${palette.foreground}'
 `;
   }

@@ -18,7 +18,7 @@ thm_black4="#c9b99a"
 
 # Status line colors
 thm_gray="#787775"
-thm_statusline_bg="#ebe7df"
+thm_statusline_bg="#f7f3eb"
 thm_statusline_fg="#4f565d"
 thm_border="#dcd8d0"
 thm_active_border="#445987"

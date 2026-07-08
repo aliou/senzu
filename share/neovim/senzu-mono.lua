@@ -32,8 +32,8 @@ vim.api.nvim_set_hl(0, 'NormalNC', { fg = '#e8e8d3', bg = '#151515' })
 
 -- Cursor
 vim.api.nvim_set_hl(0, 'Cursor', { fg = '#151515', bg = '#7a8aa6' })
-vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1c1c1cbf' })
+vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1c1c1cbf' })
 
 -- Line numbers
 vim.api.nvim_set_hl(0, 'LineNr', { fg = '#605958' })
@@ -48,11 +48,11 @@ vim.api.nvim_set_hl(0, 'IncSearch', { fg = '#151515', bg = '#888888' })
 
 -- Splits and UI
 vim.api.nvim_set_hl(0, 'VertSplit', { fg = '#403c41' })
-vim.api.nvim_set_hl(0, 'StatusLine', { fg = '#e8e8d3', bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'StatusLineNC', { fg = '#888888', bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'StatusLine', { fg = '#e8e8d3', bg = '#151515' })
+vim.api.nvim_set_hl(0, 'StatusLineNC', { fg = '#605958', bg = '#151515' })
 
 -- Popup menu
-vim.api.nvim_set_hl(0, 'Pmenu', { fg = '#e8e8d3', bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'Pmenu', { fg = '#e8e8d3', bg = '#151515' })
 vim.api.nvim_set_hl(0, 'PmenuSel', { fg = '#151515', bg = '#556779' })
 
 -- Syntax highlighting
@@ -71,13 +71,13 @@ vim.api.nvim_set_hl(0, 'Special', { fg = '#7a8aa6' })
 vim.api.nvim_set_hl(0, 'Tag', { fg = '#a08070' })
 
 -- Floating windows
-vim.api.nvim_set_hl(0, 'NormalFloat', { fg = '#e8e8d3', bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#403c41', bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'NormalFloat', { fg = '#e8e8d3', bg = '#151515' })
+vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#403c41', bg = '#151515' })
 
 -- Tabline
-vim.api.nvim_set_hl(0, 'TabLine', { fg = '#888888', bg = '#151515' })
+vim.api.nvim_set_hl(0, 'TabLine', { fg = '#605958', bg = '#151515' })
 vim.api.nvim_set_hl(0, 'TabLineFill', { bg = '#151515' })
-vim.api.nvim_set_hl(0, 'TabLineSel', { fg = '#e8e8d3', bg = '#1c1c1c', bold = true })
+vim.api.nvim_set_hl(0, 'TabLineSel', { fg = '#e8e8d3', bg = '#151515', bold = true })
 
 -- Diff
 vim.api.nvim_set_hl(0, 'DiffAdd', { fg = '#afd787' })

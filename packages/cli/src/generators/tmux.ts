@@ -1,4 +1,5 @@
 import type { Palette } from "../core/types";
+import { border, surface } from "../core/ui";
 import { PerPaletteGenerator } from "./base";
 
 export class TmuxGenerator extends PerPaletteGenerator {
@@ -7,12 +8,12 @@ export class TmuxGenerator extends PerPaletteGenerator {
   fileExtension = ".tmuxtheme";
 
   generate(palette: Palette): string {
-    const { ansi, colors: named, semantic, ui } = palette;
+    const { ansi, colors: named, semantic } = palette;
     const accent = named.accent_color_2 ?? named.morning_glory ?? ansi.cyan;
     const statusFg = named.grey_chateau ?? ansi.white;
-    const border = named.tundora ?? ui.border ?? "#404040";
+    const borderCol = border(palette);
     const activeBorder = named.accent_color_2 ?? named.ship_cove ?? ansi.blue;
-    const surface = ui.surface ?? named.grey_one ?? "#1c1c1c";
+    const surfaceBg = surface(palette);
 
     return `#!/usr/bin/env bash
 
@@ -34,9 +35,9 @@ thm_black4="${palette.selection_background}"
 
 # Status line colors
 thm_gray="${named.grey ?? "#888888"}"
-thm_statusline_bg="${surface}"
+thm_statusline_bg="${surfaceBg}"
 thm_statusline_fg="${statusFg}"
-thm_border="${named.grey_three ?? border}"
+thm_border="${named.grey_three ?? borderCol}"
 thm_active_border="${activeBorder}"
 thm_highlight="${palette.selection_background}"
 

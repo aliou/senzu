@@ -32,8 +32,8 @@ vim.api.nvim_set_hl(0, 'NormalNC', { fg = '#252525', bg = '#f5e6d3' })
 
 -- Cursor
 vim.api.nvim_set_hl(0, 'Cursor', { fg = '#f5e6d3', bg = '#234291' })
-vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#e8d5c0bf' })
+vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#e8d5c0bf' })
 
 -- Line numbers
 vim.api.nvim_set_hl(0, 'LineNr', { fg = '#605958' })
@@ -48,12 +48,12 @@ vim.api.nvim_set_hl(0, 'IncSearch', { fg = '#f5e6d3', bg = '#b87520' })
 
 -- Splits and UI
 vim.api.nvim_set_hl(0, 'VertSplit', { fg = '#d0ccd1' })
-vim.api.nvim_set_hl(0, 'StatusLine', { fg = '#252525', bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'StatusLineNC', { fg = '#888888', bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'StatusLine', { fg = '#252525', bg = '#f5e6d3' })
+vim.api.nvim_set_hl(0, 'StatusLineNC', { fg = '#605958', bg = '#f5e6d3' })
 
 -- Popup menu
-vim.api.nvim_set_hl(0, 'Pmenu', { fg = '#252525', bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'PmenuSel', { fg = '#f5e6d3', bg = '#2B5B77' })
+vim.api.nvim_set_hl(0, 'Pmenu', { fg = '#252525', bg = '#f5e6d3' })
+vim.api.nvim_set_hl(0, 'PmenuSel', { fg = '#f5e6d3', bg = '#556779' })
 
 -- Syntax highlighting
 vim.api.nvim_set_hl(0, 'Comment', { fg = '#787878', italic = true })
@@ -71,13 +71,13 @@ vim.api.nvim_set_hl(0, 'Special', { fg = '#2B5B77' })
 vim.api.nvim_set_hl(0, 'Tag', { fg = '#658349' })
 
 -- Floating windows
-vim.api.nvim_set_hl(0, 'NormalFloat', { fg = '#252525', bg = '#1c1c1c' })
-vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#d0ccd1', bg = '#1c1c1c' })
+vim.api.nvim_set_hl(0, 'NormalFloat', { fg = '#252525', bg = '#f5e6d3' })
+vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#d0ccd1', bg = '#f5e6d3' })
 
 -- Tabline
-vim.api.nvim_set_hl(0, 'TabLine', { fg = '#888888', bg = '#f5e6d3' })
+vim.api.nvim_set_hl(0, 'TabLine', { fg = '#605958', bg = '#f5e6d3' })
 vim.api.nvim_set_hl(0, 'TabLineFill', { bg = '#f5e6d3' })
-vim.api.nvim_set_hl(0, 'TabLineSel', { fg = '#252525', bg = '#1c1c1c', bold = true })
+vim.api.nvim_set_hl(0, 'TabLineSel', { fg = '#252525', bg = '#f5e6d3', bold = true })
 
 -- Diff
 vim.api.nvim_set_hl(0, 'DiffAdd', { fg = '#386014' })

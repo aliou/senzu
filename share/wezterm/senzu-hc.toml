@@ -17,7 +17,7 @@ cursor_border = '#c0e0ff'
 selection_bg = '#303030'
 selection_fg = '#f8f8f0'
 
-scrollbar_thumb = '#282828'
+scrollbar_thumb = '#f8f8f04c'
 split = '#282828'
 
 ansi = [
@@ -46,21 +46,21 @@ brights = [
 background = '#060606'
 
 [colors.tab_bar.active_tab]
-bg_color = '#78a0b8'
+bg_color = '#556779'
 fg_color = '#060606'
 
 [colors.tab_bar.inactive_tab]
-bg_color = '#1c1c1c'
-fg_color = '#888888'
+bg_color = '#060606'
+fg_color = '#605958'
 
 [colors.tab_bar.inactive_tab_hover]
-bg_color = '#404040'
+bg_color = '#303030'
 fg_color = '#f8f8f0'
 
 [colors.tab_bar.new_tab]
-bg_color = '#1c1c1c'
-fg_color = '#888888'
+bg_color = '#060606'
+fg_color = '#605958'
 
 [colors.tab_bar.new_tab_hover]
-bg_color = '#404040'
+bg_color = '#303030'
 fg_color = '#f8f8f0'

@@ -57,7 +57,8 @@ const SLOT_DEFS: Record<
     candidates: ["accent1", "greenSmoke"],
   },
   borderMuted: {
-    getSource: (p) => p.colors.grey_three ?? p.ui.borderMuted ?? "#333333",
+    getSource: (p) =>
+      p.colors.grey_three ?? p.ui["border.variant"] ?? "#333333",
     candidates: ["greyThree"],
   },
   success: { getSource: (p) => p.semantic.ok, candidates: ["ok"] },
@@ -77,7 +78,8 @@ const SLOT_DEFS: Record<
     candidates: ["regentGrey"],
   },
   selectedBg: {
-    getSource: (p) => p.colors.grey_one ?? p.ui.surface ?? "#1c1c1c",
+    getSource: (p) =>
+      p.colors.grey_one ?? p.ui["surface.background"] ?? "#1c1c1c",
     candidates: ["greyOne"],
   },
   userMessageBg: {
@@ -239,7 +241,8 @@ const EXPORT_SLOTS: Record<
 > = {
   pageBg: { getSource: (p) => p.background, candidates: ["background"] },
   cardBg: {
-    getSource: (p) => p.colors.grey_one ?? p.ui.surface ?? "#1c1c1c",
+    getSource: (p) =>
+      p.colors.grey_one ?? p.ui["surface.background"] ?? "#1c1c1c",
     candidates: ["greyOne"],
   },
   infoBg: {
