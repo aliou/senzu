@@ -1,12 +1,14 @@
 import {
   existsSync,
   mkdirSync,
+  readFileSync,
   symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { getPalettes, loadConfig } from "../core/config";
 import {
@@ -14,13 +16,29 @@ import {
   getGenerator,
   getGeneratorNames,
 } from "../generators";
+import { runPreview } from "./preview";
 
 interface Options {
   config: string;
   output: string;
 }
 
-function main(): void {
+/** Resolve the package.json sibling to this module and read its version. */
+function readPackageVersion(): string {
+  // src/cli/index.ts -> ../../package.json (the @senzu/cli package.json).
+  const here = dirname(fileURLToPath(import.meta.url));
+  const pkgPath = resolve(here, "..", "..", "package.json");
+  try {
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
+      version?: string;
+    };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -32,13 +50,13 @@ function main(): void {
     allowPositionals: true,
   });
 
-  if (values.help || positionals.length === 0) {
-    printHelp();
+  if (values.version) {
+    console.log(readPackageVersion());
     process.exit(0);
   }
 
-  if (values.version) {
-    console.log("0.1.0");
+  if (values.help || positionals.length === 0) {
+    printHelp();
     process.exit(0);
   }
 
@@ -58,6 +76,9 @@ function main(): void {
         break;
       case "install":
         install(args, options);
+        break;
+      case "preview":
+        await preview(args[0], options);
         break;
       default:
         console.error(`Unknown command: ${command}`);
@@ -123,6 +144,17 @@ function list(options: Options): void {
   }
 
   console.log("");
+}
+
+async function preview(
+  variant: string | undefined,
+  options: Options,
+): Promise<void> {
+  const configPath = resolve(options.config);
+  const config = loadConfig(configPath);
+  const palettes = getPalettes(config);
+
+  await runPreview(palettes, variant);
 }
 
 function install(args: string[], options: Options): void {
@@ -238,6 +270,7 @@ Commands:
   generate [target]           Generate theme files for all or a specific target
   list                        List available palettes and targets
   install <target> [variant]  Install themes (symlink) to default or custom path
+  preview [variant]           Interactively preview a palette's colors in the terminal
 
 Options:
   -c, --config <path>   Config file path (default: ./config.json)
@@ -254,7 +287,16 @@ Examples:
   senzu list                       List palettes and targets
   senzu install ghostty            Install all Ghostty variants to ~/.config/ghostty/themes/
   senzu install wezterm senzu-mono   Install one variant to ~/.config/wezterm/colors/
+  senzu preview                    Interactively browse and preview palettes
+  senzu preview senzu-hc-light     Preview a specific palette
 `);
 }
 
-main();
+main().catch((error) => {
+  if (error instanceof Error) {
+    console.error(`Error: ${error.message}`);
+  } else {
+    console.error("An unknown error occurred");
+  }
+  process.exit(1);
+});
