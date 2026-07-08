@@ -1,0 +1,48 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
+  "plugins": [
+    "./node_modules/@aliou/biome-plugins/plugins/no-js-import-extension.grit",
+    "./node_modules/@aliou/biome-plugins/plugins/no-inline-imports.grit",
+    "./node_modules/@aliou/biome-plugins/plugins/no-inner-types.grit",
+    "./node_modules/@aliou/biome-plugins/plugins/no-emojis.grit"
+  ],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/share",
+      "!**/config.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "senzu",
+  "version": "0.0.0",
+  "description": "Canonical color scheme generator for terminal and editor applications",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "senzu": "src/cli/index.ts"
+  },
+  "scripts": {
+    "generate": "tsx src/cli/index.ts generate",
+    "list": "tsx src/cli/index.ts list",
+    "install:themes": "tsx src/cli/index.ts install",
+    "build": "tsdown",
+    "lint": "biome check",
+    "format": "biome check --write",
+    "typecheck": "tsc --noEmit",
+    "changeset": "changeset"
+  },
+  "pi": {
+    "themes": [
+      "./share/pi/senzu.json",
+      "./share/pi/senzu-mono.json",
+      "./share/pi/senzu-light.json",
+      "./share/pi/senzu-mono-light.json",
+      "./share/pi/senzu-muted.json",
+      "./share/pi/senzu-muted-light.json",
+      "./share/pi/senzu-hc.json",
+      "./share/pi/senzu-hc-light.json",
+      "./share/pi/senzu-warm.json"
+    ]
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@aliou/biome-plugins": "^0.4.1",
+    "@biomejs/biome": "^2.4.6",
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^24.0.0",
+    "tsdown": "^0.22.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@11.9.0"
+}
