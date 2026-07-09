@@ -1,5 +1,11 @@
 # @senzu/cli
 
+## 0.3.1
+
+### Patch Changes
+
+- 0923795: Add TreeSitter highlight groups to the Neovim theme generator.
+
 ## 0.3.0
 
 ### Minor Changes
