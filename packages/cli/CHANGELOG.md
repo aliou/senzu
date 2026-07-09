@@ -1,5 +1,13 @@
 # @senzu/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- 8b2d03c: Add TextMate theme generator
+
+  Generate Shiki/VS Code-compatible TextMate themes for all nine Senzu variants.
+
 ## 0.2.0
 
 ### Minor Changes
