@@ -168,16 +168,18 @@ async function preview(
 }
 
 function install(args: string[], options: Options): void {
+  const availableTargets = getGeneratorNames().join(", ");
+
   if (args.length === 0) {
     console.error("Usage: senzu install <target> [variant] [--output <path>]");
-    console.error("Targets: ghostty, wezterm, tmux, neovim, zed, pi");
+    console.error(`Targets: ${availableTargets}`);
     process.exit(1);
   }
 
   const target = args[0];
   if (!target) {
     console.error("Usage: senzu install <target> [variant] [--output <path>]");
-    console.error("Targets: ghostty, wezterm, tmux, neovim, zed, pi");
+    console.error(`Targets: ${availableTargets}`);
     process.exit(1);
   }
   const variant = args[1] ?? "all";
