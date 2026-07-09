@@ -41,7 +41,7 @@ jobs:
         run: pnpm run build
 
       - name: Verify bundle works
-        run: node dist/index.mjs --help
+        run: node packages/cli/dist/index.mjs --help
 
       - name: Verify themes are fresh
         run: |
