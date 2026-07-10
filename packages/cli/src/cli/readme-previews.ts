@@ -7,6 +7,8 @@ import { SAMPLES, type Sample, type Span } from "./samples";
 const README_START = "<!-- BEGIN THEME PREVIEWS -->";
 const README_END = "<!-- END THEME PREVIEWS -->";
 const DEFAULT_PREVIEW_DIR = ".github/assets/previews";
+const PREVIEW_FONT_FAMILY =
+  "'Berkeley Mono', 'Berkeley Mono Variable', 'TX-02', 'BerkeleyMono Nerd Font', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 const INLINE_PREVIEW_KEYS = new Set([
   "senzu",
   "senzu-light",
@@ -178,14 +180,14 @@ function renderPreviewSvg(palette: Palette, sample: Sample): string {
   sample.lines.forEach((line, index) => {
     const y = paddingY + fontSize + index * lineHeight;
     out.push(
-      `<text x="${paddingX + gutterWidth - 16}" y="${y}" fill="${gutter}" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="${fontSize}">${index + 1}</text>`,
+      `<text x="${paddingX + gutterWidth - 16}" y="${y}" fill="${gutter}" text-anchor="end" font-family="${PREVIEW_FONT_FAMILY}" font-size="${fontSize}">${index + 1}</text>`,
     );
 
     let x = paddingX + gutterWidth + 10;
     for (const [role, text] of line) {
       const style = role === "comment" ? ' font-style="italic"' : "";
       out.push(
-        `<text x="${x.toFixed(1)}" y="${y}" fill="${roleColor(palette, role)}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="${fontSize}"${style}>${escapeXml(text)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${y}" fill="${roleColor(palette, role)}" font-family="${PREVIEW_FONT_FAMILY}" font-size="${fontSize}"${style}>${escapeXml(text)}</text>`,
       );
       x += text.length * charWidth;
     }
