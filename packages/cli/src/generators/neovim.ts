@@ -1,3 +1,4 @@
+import { opaque } from "../core/color";
 import type { Palette } from "../core/types";
 import {
   activeLine,
@@ -19,7 +20,10 @@ export class NeovimGenerator extends PerPaletteGenerator {
   generate(palette: Palette): string {
     const { ansi, ansi_bright, syntax, semantic } = palette;
     const variantName = palette.name.toLowerCase().replace(/\s+/g, "_");
-    const activeLineBg = activeLine(palette);
+    // The active-line slot may carry an alpha channel (`#rrggbbaa`, valid in
+    // Zed). Neovim's `nvim_set_hl` rejects alpha hex with E5113, so composite
+    // it onto the editor background to preserve the intended appearance.
+    const activeLineBg = opaque(activeLine(palette), palette.background);
     const lineNumbers = lineNumber(palette);
     const activeLineNr = activeLineNumber(palette);
     const surfaceBg = surface(palette);

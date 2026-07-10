@@ -32,8 +32,8 @@ vim.api.nvim_set_hl(0, 'NormalNC', { fg = '#dad6c8', bg = '#101010' })
 
 -- Cursor
 vim.api.nvim_set_hl(0, 'Cursor', { fg = '#101010', bg = '#a6c3d9' })
-vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1e1e1cbf' })
-vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1e1e1cbf' })
+vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1a1a19' })
+vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1a1a19' })
 
 -- Line numbers
 vim.api.nvim_set_hl(0, 'LineNr', { fg = '#58534f' })
