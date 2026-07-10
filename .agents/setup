@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+NODE_VERSION="${NODE_VERSION:-v24.18.0}"
+NODE_MAJOR="${NODE_VERSION#v}"
+NODE_MAJOR="${NODE_MAJOR%%.*}"
+PACKAGE_MANAGER="$(node -p "require('./package.json').packageManager" 2>/dev/null || printf 'pnpm@11.9.0')"
+PNPM_VERSION="${PACKAGE_MANAGER#pnpm@}"
+
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64) NODE_ARCH="x64" ;;
+  aarch64 | arm64) NODE_ARCH="arm64" ;;
+  *)
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+    ;;
+esac
+
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+case "$OS" in
+  linux | darwin) ;;
+  *)
+    echo "Unsupported operating system: $OS" >&2
+    exit 1
+    ;;
+esac
+
+BIN_DIR="${HOME}/.local/bin"
+INSTALL_ROOT="${HOME}/.local/share/senzu"
+mkdir -p "$BIN_DIR" "$INSTALL_ROOT"
+
+current_node_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || true)"
+if [[ "$current_node_major" != "$NODE_MAJOR" ]]; then
+  NODE_DIR="${INSTALL_ROOT}/node-${NODE_VERSION}-${OS}-${NODE_ARCH}"
+  if [[ ! -x "${NODE_DIR}/bin/node" ]]; then
+    TMP_DIR="$(mktemp -d)"
+    trap 'rm -rf "$TMP_DIR"' EXIT
+
+    TARBALL="node-${NODE_VERSION}-${OS}-${NODE_ARCH}.tar.xz"
+    curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/${TARBALL}" -o "${TMP_DIR}/${TARBALL}"
+    tar -xJf "${TMP_DIR}/${TARBALL}" -C "$INSTALL_ROOT"
+  fi
+
+  for executable in node npm npx corepack; do
+    ln -sfn "${NODE_DIR}/bin/${executable}" "${BIN_DIR}/${executable}"
+  done
+fi
+
+export PATH="${BIN_DIR}:${PATH}"
+
+corepack enable --install-directory "$BIN_DIR"
+corepack prepare "pnpm@${PNPM_VERSION}" --activate
+pnpm install --frozen-lockfile
