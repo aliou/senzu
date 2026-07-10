@@ -8,6 +8,7 @@
     "generate": "tsx packages/cli/src/cli/index.ts generate -o .",
     "list": "tsx packages/cli/src/cli/index.ts list",
     "install:themes": "tsx packages/cli/src/cli/index.ts install",
+    "readme:previews": "tsx packages/cli/src/cli/readme-previews.ts",
     "build": "pnpm -C packages/cli build",
     "lint": "biome check",
     "format": "biome check --write",
