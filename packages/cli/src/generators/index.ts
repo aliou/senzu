@@ -5,6 +5,7 @@ import { PiGenerator } from "./pi";
 import { TextMateGenerator } from "./textmate";
 import { TmuxGenerator } from "./tmux";
 import { WeztermGenerator } from "./wezterm";
+import { WtermGenerator } from "./wterm";
 import { ZedGenerator } from "./zed";
 
 export { FamilyGenerator, PerPaletteGenerator } from "./base";
@@ -14,6 +15,7 @@ export { PiGenerator } from "./pi";
 export { TextMateGenerator } from "./textmate";
 export { TmuxGenerator } from "./tmux";
 export { WeztermGenerator } from "./wezterm";
+export { WtermGenerator } from "./wterm";
 export { ZedGenerator } from "./zed";
 
 const generators: Map<string, Generator> = new Map();
@@ -21,6 +23,7 @@ const generators: Map<string, Generator> = new Map();
 for (const g of [
   new GhosttyGenerator(),
   new WeztermGenerator(),
+  new WtermGenerator(),
   new TmuxGenerator(),
   new NeovimGenerator(),
   new ZedGenerator(),
