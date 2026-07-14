@@ -46,6 +46,7 @@
     "dell": "#437019",
     "calypso": "#2952a3",
     "fg": "#000000",
+    "fuchsia": "#b8005f",
     "error": "#ff3333",
     "warning": "#a66510",
     "info": "#1670af",
@@ -99,10 +100,11 @@
     "syntaxPunctuation": "silver",
     "thinkingOff": "greyThree",
     "thinkingMinimal": "boulder",
-    "thinkingLow": "greyChateau",
-    "thinkingMedium": "greenSmoke",
-    "thinkingHigh": "morningGlory",
+    "thinkingLow": "morningGlory",
+    "thinkingMedium": "morningGlory",
+    "thinkingHigh": "wewak",
     "thinkingXhigh": "warning",
+    "thinkingMax": "fuchsia",
     "bashMode": "warning"
   },
   "export": {

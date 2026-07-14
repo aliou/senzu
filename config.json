@@ -89,7 +89,8 @@
         "purple": "#700089",
         "tea_green": "#d2ebbe",
         "dell": "#437019",
-        "calypso": "#2B5B77"
+        "calypso": "#2B5B77",
+        "fuchsia": "#ff5fb0"
       },
       "semantic": {
         "error": "#d74545",
@@ -386,7 +387,8 @@
         "perano": "#7a8aa6",
         "morning_glory": "#7a8aa6",
         "green_smoke": "#b39066",
-        "goldenrod": "#b39066"
+        "goldenrod": "#b39066",
+        "fuchsia": "#d56a9e"
       },
       "semantic": {
         "error": "#c95c5c",
@@ -688,7 +690,8 @@
         "tea_green": "#92ae7e",
         "dell": "#437019",
         "calypso": "#2952a3",
-        "fg": "#000000"
+        "fg": "#000000",
+        "fuchsia": "#b8005f"
       },
       "semantic": {
         "error": "#ff3333",
@@ -987,7 +990,8 @@
         "perano": "#4a5e81",
         "morning_glory": "#4a5e81",
         "green_smoke": "#7d7163",
-        "goldenrod": "#7d7163"
+        "goldenrod": "#7d7163",
+        "fuchsia": "#9a2050"
       },
       "semantic": {
         "error": "#cc0000",
@@ -1293,7 +1297,8 @@
         "purple": "#5c1e68",
         "tea_green": "#c5d3b2",
         "dell": "#3c5c25",
-        "calypso": "#28505f"
+        "calypso": "#28505f",
+        "fuchsia": "#c47090"
       },
       "semantic": {
         "error": "#cc4d4d",
@@ -1597,7 +1602,8 @@
         "tea_green": "#a5b394",
         "dell": "#4c5e34",
         "calypso": "#3c5884",
-        "fg": "#222120"
+        "fg": "#222120",
+        "fuchsia": "#8a3a5a"
       },
       "semantic": {
         "error": "#b84949",
@@ -1903,7 +1909,8 @@
         "purple": "#8800a8",
         "tea_green": "#e0f0c0",
         "dell": "#559020",
-        "calypso": "#3070a0"
+        "calypso": "#3070a0",
+        "fuchsia": "#ff60c0"
       },
       "semantic": {
         "error": "#ff5050",
@@ -2210,7 +2217,8 @@
         "tea_green": "#405820",
         "dell": "#2a5500",
         "calypso": "#0a3060",
-        "fg": "#000000"
+        "fg": "#000000",
+        "fuchsia": "#c00060"
       },
       "semantic": {
         "error": "#c00000",
@@ -2516,7 +2524,8 @@
         "purple": "#700089",
         "tea_green": "#d2ebbe",
         "dell": "#437019",
-        "calypso": "#2B5B77"
+        "calypso": "#2B5B77",
+        "fuchsia": "#e85a8c"
       },
       "semantic": {
         "error": "#d74545",

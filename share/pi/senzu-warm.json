@@ -50,6 +50,7 @@
     "teaGreen": "#d2ebbe",
     "dell": "#437019",
     "calypso": "#2B5B77",
+    "fuchsia": "#e85a8c",
     "error": "#d74545",
     "warning": "#ffaf00",
     "info": "#5f9ecf",
@@ -103,10 +104,11 @@
     "syntaxPunctuation": "silver",
     "thinkingOff": "greyThree",
     "thinkingMinimal": "boulder",
-    "thinkingLow": "greyChateau",
-    "thinkingMedium": "greenSmoke",
-    "thinkingHigh": "morningGlory",
+    "thinkingLow": "morningGlory",
+    "thinkingMedium": "bilobaFlower",
+    "thinkingHigh": "wewak",
     "thinkingXhigh": "warning",
+    "thinkingMax": "fuchsia",
     "bashMode": "warning"
   },
   "export": {

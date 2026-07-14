@@ -215,22 +215,25 @@ const SLOT_DEFS: Record<
     candidates: ["boulder"],
   },
   thinkingLow: {
-    getSource: (p) => p.colors.grey_chateau ?? p.colors.grey ?? "#a0a8b0",
-    candidates: ["greyChateau"],
+    getSource: (p) => p.colors.morning_glory ?? "#8fbfdc",
+    candidates: ["morningGlory"],
   },
   thinkingMedium: {
     getSource: (p) =>
-      p.colors.accent_color_1 ?? p.colors.green_smoke ?? p.ansi.green,
-    candidates: ["accent1", "greenSmoke"],
+      p.colors.biloba_flower ?? p.colors.morning_glory ?? "#c6b6ee",
+    candidates: ["bilobaFlower", "morningGlory"],
   },
   thinkingHigh: {
-    getSource: (p) =>
-      p.colors.accent_color_2 ?? p.colors.morning_glory ?? p.ansi.cyan,
-    candidates: ["accent2", "morningGlory"],
+    getSource: (p) => p.colors.wewak ?? "#cc88a3",
+    candidates: ["wewak"],
   },
   thinkingXhigh: {
     getSource: (p) => p.semantic.warning,
     candidates: ["warning"],
+  },
+  thinkingMax: {
+    getSource: (p) => p.colors.fuchsia,
+    candidates: ["fuchsia"],
   },
   bashMode: { getSource: (p) => p.semantic.warning, candidates: ["warning"] },
 };
