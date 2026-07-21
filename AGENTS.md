@@ -17,18 +17,18 @@
 
 - **Structure**:
   - `src/core/` — types, zod schema, config loader
-  - `src/generators/` — one generator per target format (ghostty, wezterm, tmux, neovim, zed, pi)
+  - `src/generators/` — one generator per target format (ghostty, wezterm, wterm, tmux, neovim, zed, pi, textmate, bat, fzf)
   - `src/cli/` — CLI entry point (`generate`, `list`, `install` commands)
   - `config.json` — canonical palette definitions for all 9 variants
   - `share/` — generated output (committed, consumed by nix)
   - `nix/home-manager.nix` — Nix home-manager module for installing themes
   - `flake.nix` — Nix flake: themes package + CLI app + devshell with git-hooks
 
-- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, tmux, neovim, pi) produce one file per variant. Family generators (zed) produce a single file from all palettes.
+- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
 - **Variants**: 9 total — `senzu` (default dark), `senzu-mono`, `senzu-light`, `senzu-mono-light`, `senzu-muted`, `senzu-muted-light`, `senzu-hc`, `senzu-hc-light`, `senzu-warm`.
 
-- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `tmux`, `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references).
+- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
 
 - **Versioning**: The version in `package.json` is the single source. The flake reads it for both the themes package (`senzu-themes`) and the CLI (`senzu`). Use changesets to bump.
 

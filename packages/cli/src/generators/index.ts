@@ -1,4 +1,6 @@
 import type { Generator } from "../core/types";
+import { BatGenerator } from "./bat";
+import { FzfGenerator } from "./fzf";
 import { GhosttyGenerator } from "./ghostty";
 import { NeovimGenerator } from "./neovim";
 import { PiGenerator } from "./pi";
@@ -9,6 +11,8 @@ import { WtermGenerator } from "./wterm";
 import { ZedGenerator } from "./zed";
 
 export { FamilyGenerator, PerPaletteGenerator } from "./base";
+export { BatGenerator } from "./bat";
+export { FzfGenerator } from "./fzf";
 export { GhosttyGenerator } from "./ghostty";
 export { NeovimGenerator } from "./neovim";
 export { PiGenerator } from "./pi";
@@ -29,6 +33,8 @@ for (const g of [
   new ZedGenerator(),
   new PiGenerator(),
   new TextMateGenerator(),
+  new BatGenerator(),
+  new FzfGenerator(),
 ]) {
   generators.set(g.name, g);
 }

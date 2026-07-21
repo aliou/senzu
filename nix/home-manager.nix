@@ -110,6 +110,32 @@ in
         description = "Which variants to install. Null installs all.";
       };
     };
+
+    bat = {
+      enable = lib.mkEnableOption "bat / delta themes (TextMate .tmTheme)" // { default = true; };
+      variants = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = ''
+          Which variants to install. Null installs all.
+          After installing (or changing variants), run `bat cache --build` so
+          bat picks up the new themes from ~/.config/bat/themes/.
+        '';
+      };
+    };
+
+    fzf = {
+      enable = lib.mkEnableOption "fzf color snippets" // { default = true; };
+      variants = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = ''
+          Which variants to install. Null installs all.
+          Each variant is a shell snippet in ~/.config/fzf/ that appends a
+          Senzu --color spec to FZF_DEFAULT_OPTS when sourced.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -158,6 +184,18 @@ in
       (lib.mkIf cfg.pi.enable (
         mkFileEntries "${cfg.package}/share/pi"
           "${config.xdg.configHome}/pi/themes" cfg.pi.variants ".json"
+      ))
+
+      # bat / delta themes (TextMate .tmTheme)
+      (lib.mkIf cfg.bat.enable (
+        mkFileEntries "${cfg.package}/share/bat"
+          "${config.xdg.configHome}/bat/themes" cfg.bat.variants ".tmTheme"
+      ))
+
+      # fzf color snippets
+      (lib.mkIf cfg.fzf.enable (
+        mkFileEntries "${cfg.package}/share/fzf"
+          "${config.xdg.configHome}/fzf" cfg.fzf.variants ".sh"
       ))
     ];
   };

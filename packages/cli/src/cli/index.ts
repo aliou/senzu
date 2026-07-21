@@ -263,6 +263,10 @@ function getDefaultInstallDir(target: string): string {
       return join(xdgConfig, "zed", "themes");
     case "pi":
       return join(xdgConfig, "pi", "themes");
+    case "bat":
+      return join(xdgConfig, "bat", "themes");
+    case "fzf":
+      return join(xdgConfig, "fzf");
     default:
       throw new Error(`No default install directory for target: ${target}`);
   }
