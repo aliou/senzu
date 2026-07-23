@@ -12,6 +12,7 @@
     "build": "pnpm -C packages/cli build",
     "lint": "biome check",
     "format": "biome check --write",
+    "test": "pnpm -C packages/cli test",
     "typecheck": "pnpm -C packages/cli typecheck",
     "changeset": "changeset"
   },

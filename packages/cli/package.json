@@ -12,13 +12,17 @@
     "list": "tsx src/cli/index.ts list",
     "install:themes": "tsx src/cli/index.ts install",
     "build": "tsdown",
+    "test": "tsx --test src/cli/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@decimalturn/toml-patch": "^2.1.0",
+    "proper-lockfile": "^4.1.2",
     "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/proper-lockfile": "^4.1.4",
     "tsdown": "^0.22.0",
     "typescript": "^5.9.0"
   },

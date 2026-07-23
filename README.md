@@ -2,6 +2,28 @@
 
 Custom themes for editors and tools, inspired by [github.com/WTFox/jellybeans.nvim](https://github.com/WTFox/jellybeans.nvim).
 
+## Herdr
+
+Install one explicit variant into a regular Herdr config file:
+
+```sh
+senzu install herdr senzu-muted
+```
+
+Senzu preserves unrelated TOML settings and comments, creates a timestamped
+backup, and prints the command for reloading Herdr. Use `--dry-run` to preview
+the updated config. Senzu refuses to modify symlinked configs unless `--force`
+is set.
+
+For a Nix-managed Herdr config, consume the theme attrset instead of modifying
+the generated config file:
+
+```nix
+ad.programs.herdr.settings.theme = inputs.senzu.lib.herdrTheme "senzu-muted";
+```
+
+All variants are also available under `inputs.senzu.lib.herdrThemes`.
+
 <!-- BEGIN THEME PREVIEWS -->
 ## Theme previews
 

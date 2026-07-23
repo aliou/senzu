@@ -28,11 +28,11 @@
   - `nix/home-manager.nix` — Nix home-manager module for installing themes and the probe
   - `flake.nix` — Nix flake: themes package, appearance probe, devshell with git-hooks
 
-- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
+- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, herdr, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
 - **Variants**: 9 total — `senzu` (default dark), `senzu-mono`, `senzu-light`, `senzu-mono-light`, `senzu-muted`, `senzu-muted-light`, `senzu-hc`, `senzu-hc-light`, `senzu-warm`.
 
-- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
+- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `herdr` (TOML config snippets plus safe config patching), `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
 
 - **Versioning**: The version in `package.json` is the single source. The flake reads it for the themes package, and `native/Cargo.toml` must match it because the probe binary is published under the release tag (`just sync-version`). Use changesets to bump.
 
@@ -58,8 +58,8 @@
 
 ## Adding a new generator
 
-1. Create `src/generators/<name>.ts` extending `PerPaletteGenerator` (one file per variant) or `FamilyGenerator` (one file from all variants).
+1. Create `packages/cli/src/generators/<name>.ts` extending `PerPaletteGenerator` (one file per variant) or `FamilyGenerator` (one file from all variants).
 2. Implement `generate()` returning the file contents string.
-3. Register the generator in `src/generators/index.ts`.
+3. Register the generator in `packages/cli/src/generators/index.ts`.
 4. Run `pnpm generate <name>` to test.
-5. Add the install logic to `nix/home-manager.nix` if it needs home-manager integration.
+5. Add install logic only where the target supports standalone theme files. For config-owning tools such as Herdr, expose composable Nix data instead of creating a competing config file.

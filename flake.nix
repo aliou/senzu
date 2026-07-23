@@ -22,7 +22,36 @@
       cliPackageJson = builtins.fromJSON (builtins.readFile ./packages/cli/package.json);
       version = cliPackageJson.version;
 
+      herdrThemeDirectory = builtins.readDir ./share/herdr;
+      herdrThemeFiles = builtins.filter (
+        name:
+        herdrThemeDirectory.${name} == "regular"
+        && builtins.match ".*[.]toml" name != null
+      ) (builtins.attrNames herdrThemeDirectory);
+      herdrThemes = builtins.listToAttrs (
+        map (
+          fileName:
+          let
+            variant = builtins.substring 0 (builtins.stringLength fileName - 5) fileName;
+            document = builtins.fromTOML (builtins.readFile (./share/herdr + "/${fileName}"));
+          in
+          {
+            name = variant;
+            value = document.theme;
+          }
+        ) herdrThemeFiles
+      );
+
       systemIndependent = {
+        lib = {
+          inherit herdrThemes;
+          herdrTheme = variant:
+            herdrThemes.${variant} or (throw ''
+              Unknown Senzu Herdr variant "${variant}".
+              Available variants: ${builtins.concatStringsSep ", " (builtins.attrNames herdrThemes)}
+            '');
+        };
+
         homeManagerModules = {
           default = import ./nix/home-manager.nix;
           senzu = import ./nix/home-manager.nix;

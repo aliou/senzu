@@ -16,11 +16,15 @@ import {
   getGenerator,
   getGeneratorNames,
 } from "../generators";
+import { buildHerdrTheme } from "../generators/herdr";
+import { installHerdrTheme, resolveHerdrConfigPath } from "./herdr-install";
 import { runPreview } from "./preview";
 
 interface Options {
   config: string;
   output: string;
+  force: boolean;
+  dryRun: boolean;
 }
 
 /**
@@ -56,6 +60,8 @@ async function main(): Promise<void> {
       version: { type: "boolean", short: "v" },
       config: { type: "string", short: "c", default: "./config.json" },
       output: { type: "string", short: "o", default: "." },
+      force: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
     },
     allowPositionals: true,
   });
@@ -74,6 +80,8 @@ async function main(): Promise<void> {
   const options: Options = {
     config: values.config as string,
     output: values.output as string,
+    force: values.force as boolean,
+    dryRun: values["dry-run"] as boolean,
   };
 
   try {
@@ -182,6 +190,12 @@ function install(args: string[], options: Options): void {
     console.error(`Targets: ${availableTargets}`);
     process.exit(1);
   }
+
+  if (target === "herdr") {
+    installHerdr(args[1], options);
+    return;
+  }
+
   const variant = args[1] ?? "all";
   const outputFlag = args.indexOf("--output");
   const outputPath =
@@ -238,6 +252,54 @@ function install(args: string[], options: Options): void {
   }
 
   console.log(`\nInstalled ${files.length} file(s).`);
+}
+
+function installHerdr(variant: string | undefined, options: Options): void {
+  if (!variant || variant === "all") {
+    throw new Error(
+      "Herdr requires an explicit variant: senzu install herdr <variant>",
+    );
+  }
+
+  const configPath = resolve(options.config);
+  const config = loadConfig(configPath);
+  const palette = getPalettes(config).find(
+    (candidate) =>
+      candidate.name.toLowerCase().replace(/\s+/g, "-") === variant,
+  );
+  if (!palette) {
+    throw new Error(`No variant found matching: ${variant}`);
+  }
+
+  const result = installHerdrTheme({
+    configPath: resolveHerdrConfigPath(),
+    theme: buildHerdrTheme(palette),
+    force: options.force,
+    dryRun: options.dryRun,
+  });
+
+  if (result.symlink) {
+    console.warn(
+      `Warning: Herdr config is a symlink to ${result.effectivePath}`,
+    );
+  }
+
+  switch (result.status) {
+    case "unchanged":
+      console.log(`Herdr already uses ${variant} in ${result.requestedPath}`);
+      break;
+    case "dry-run":
+      console.log(`Would update ${result.effectivePath} with ${variant}:\n`);
+      console.log(result.contents);
+      break;
+    case "updated":
+      console.log(`Updated ${result.effectivePath} with ${variant}.`);
+      if (result.backupPath) {
+        console.log(`Backup: ${result.backupPath}`);
+      }
+      console.log("Reload with: herdr server reload-config");
+      break;
+  }
 }
 
 function getDefaultInstallDir(target: string): string {
@@ -297,6 +359,8 @@ Commands:
 Options:
   -c, --config <path>   Config file path (default: ./config.json)
   -o, --output <path>   Output directory (default: .)
+      --dry-run         Preview a Herdr config update without writing
+      --force           Follow and update a Herdr config symlink target
   -h, --help            Show this help
   -v, --version         Show version
 
@@ -309,6 +373,7 @@ Examples:
   senzu list                       List palettes and targets
   senzu install ghostty            Install all Ghostty variants to ~/.config/ghostty/themes/
   senzu install wezterm senzu-mono   Install one variant to ~/.config/wezterm/colors/
+  senzu install herdr senzu-muted  Update Herdr config after creating a backup
   senzu preview                    Interactively browse and preview palettes
   senzu preview senzu-hc-light     Preview a specific palette
 `);

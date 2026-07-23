@@ -2,23 +2,27 @@ import type { Palette } from "../core/types";
 import { elevatedSurface, textMuted } from "../core/ui";
 import { PerPaletteGenerator } from "./base";
 
-export class HerdrGenerator extends PerPaletteGenerator {
-  name = "herdr";
-  description = "Herdr agent multiplexer config snippet";
-  fileExtension = ".toml";
+export interface HerdrThemeConfig {
+  name: string;
+  auto_switch: boolean;
+  custom: Record<string, string>;
+}
 
-  generate(palette: Palette): string {
-    const baseTheme =
-      palette.appearance === "light" ? "catppuccin-latte" : "catppuccin";
-    const muted = palette.colors.scorpion ?? textMuted(palette);
-    const overlay = palette.colors.grey ?? textMuted(palette);
+export function buildHerdrTheme(palette: Palette): HerdrThemeConfig {
+  const baseTheme =
+    palette.appearance === "light" ? "catppuccin-latte" : "catppuccin";
+  const muted = palette.colors.scorpion ?? textMuted(palette);
+  const overlay = palette.colors.grey ?? textMuted(palette);
 
-    // Higher contrast means lighter text on dark palettes and darker text on
-    // light palettes.
-    const overlay0 = palette.appearance === "light" ? overlay : muted;
-    const overlay1 = palette.appearance === "light" ? muted : overlay;
+  // Higher contrast means lighter text on dark palettes and darker text on
+  // light palettes.
+  const overlay0 = palette.appearance === "light" ? overlay : muted;
+  const overlay1 = palette.appearance === "light" ? muted : overlay;
 
-    const colors = {
+  return {
+    name: baseTheme,
+    auto_switch: false,
+    custom: {
       accent: palette.ui["panel.focused_border"] ?? palette.cursor,
       panel_bg: palette.ui["panel.background"] ?? palette.background,
       surface0:
@@ -38,9 +42,18 @@ export class HerdrGenerator extends PerPaletteGenerator {
       blue: palette.ansi.blue,
       teal: palette.ansi.cyan,
       peach: palette.colors.raw_sienna ?? palette.semantic.warning,
-    };
+    },
+  };
+}
 
-    const customColors = Object.entries(colors)
+export class HerdrGenerator extends PerPaletteGenerator {
+  name = "herdr";
+  description = "Herdr agent multiplexer config snippet";
+  fileExtension = ".toml";
+
+  generate(palette: Palette): string {
+    const theme = buildHerdrTheme(palette);
+    const customColors = Object.entries(theme.custom)
       .map(([name, color]) => `${name} = "${color}"`)
       .join("\n");
 
@@ -54,8 +67,8 @@ export class HerdrGenerator extends PerPaletteGenerator {
 # cannot switch automatically. Copy one Senzu variant at a time.
 
 [theme]
-name = "${baseTheme}"
-auto_switch = false
+name = "${theme.name}"
+auto_switch = ${theme.auto_switch}
 
 [theme.custom]
 ${customColors}
