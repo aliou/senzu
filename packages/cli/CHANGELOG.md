@@ -1,5 +1,13 @@
 # @senzu/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- 7fb658f: Add Yazi file manager flavors for every Senzu variant.
+
+  Each flavor includes Yazi UI colors and a matching TextMate theme for syntax-highlighted previews. The CLI and Home Manager module install the flavor directories under `~/.config/yazi/flavors`.
+
 ## 0.4.0
 
 ### Minor Changes
