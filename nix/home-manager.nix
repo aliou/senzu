@@ -44,6 +44,17 @@ let
         };
       }) (variantsToInstall variants)
     );
+
+  # Yazi flavors are directories named <variant>.yazi.
+  mkYaziEntries = sourceDir: destDir: variants:
+    lib.listToAttrs (
+      map (name: {
+        name = "${destDir}/${name}.yazi";
+        value = {
+          source = "${sourceDir}/${name}.yazi";
+        };
+      }) (variantsToInstall variants)
+    );
 in
 {
   options.programs.senzu = {
@@ -136,6 +147,20 @@ in
         '';
       };
     };
+
+    yazi = {
+      enable = lib.mkEnableOption "Yazi file manager flavors" // { default = true; };
+      variants = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = ''
+          Which variants to install. Null installs all.
+          Select an installed flavor in ~/.config/yazi/theme.toml, for example:
+          [flavor]
+          dark = "senzu"
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -196,6 +221,12 @@ in
       (lib.mkIf cfg.fzf.enable (
         mkFileEntries "${cfg.package}/share/fzf"
           "${config.xdg.configHome}/fzf" cfg.fzf.variants ".sh"
+      ))
+
+      # Yazi flavors
+      (lib.mkIf cfg.yazi.enable (
+        mkYaziEntries "${cfg.package}/share/yazi"
+          "${config.xdg.configHome}/yazi/flavors" cfg.yazi.variants
       ))
     ];
   };

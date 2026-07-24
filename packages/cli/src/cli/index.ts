@@ -217,7 +217,11 @@ function install(args: string[], options: Options): void {
   console.log(`Installing ${target} themes to ${destDir}`);
   for (const file of files) {
     const sourcePath = resolve(options.output, file.relativePath);
-    const destPath = join(destDir, basename(file.relativePath));
+    const targetPrefix = `share/${target}/`;
+    const relativeDestPath = file.relativePath.startsWith(targetPrefix)
+      ? file.relativePath.slice(targetPrefix.length)
+      : basename(file.relativePath);
+    const destPath = join(destDir, relativeDestPath);
 
     mkdirSync(dirname(destPath), { recursive: true });
 
@@ -267,6 +271,8 @@ function getDefaultInstallDir(target: string): string {
       return join(xdgConfig, "bat", "themes");
     case "fzf":
       return join(xdgConfig, "fzf");
+    case "yazi":
+      return join(xdgConfig, "yazi", "flavors");
     default:
       throw new Error(`No default install directory for target: ${target}`);
   }

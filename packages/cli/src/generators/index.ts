@@ -8,6 +8,7 @@ import { TextMateGenerator } from "./textmate";
 import { TmuxGenerator } from "./tmux";
 import { WeztermGenerator } from "./wezterm";
 import { WtermGenerator } from "./wterm";
+import { YaziGenerator } from "./yazi";
 import { ZedGenerator } from "./zed";
 
 export { FamilyGenerator, PerPaletteGenerator } from "./base";
@@ -20,6 +21,7 @@ export { TextMateGenerator } from "./textmate";
 export { TmuxGenerator } from "./tmux";
 export { WeztermGenerator } from "./wezterm";
 export { WtermGenerator } from "./wterm";
+export { YaziGenerator } from "./yazi";
 export { ZedGenerator } from "./zed";
 
 const generators: Map<string, Generator> = new Map();
@@ -35,6 +37,7 @@ for (const g of [
   new TextMateGenerator(),
   new BatGenerator(),
   new FzfGenerator(),
+  new YaziGenerator(),
 ]) {
   generators.set(g.name, g);
 }
