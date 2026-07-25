@@ -139,19 +139,14 @@ _senzu_osc11_bg() {
 # is the leak-safe way to query OSC 11 from a shell hook: the subprocess is the
 # sole reader of /dev/tty (the parent shell's line editor is blocked waiting
 # for the command substitution), so the terminal's reply cannot be grabbed
-# and rendered as garbage by ZLE. We also disable echo on /dev/tty during the
-# query so any stray bytes are never echoed.
+# and rendered as garbage by ZLE. No stty manipulation here — putting the
+# shared terminal tty in raw mode destabilizes some terminal emulators
+# (Ghostty beachballs). The subprocess read with a timeout is enough.
 if [ "${0##*/}" = "senzu-appearance.sh" ]; then
-  if [ -c /dev/tty ]; then
-    _sa_saved=$(stty -g </dev/tty 2>/dev/null) &&
-      stty -echo -icanon min 0 </dev/tty 2>/dev/null
-  fi
   if [ $# -ge 2 ]; then
     senzu_variant "$1" "$2"
   else
     senzu_appearance
   fi
-  _sa_rc=$?
-  [ -n "${_sa_saved:-}" ] && stty "$_sa_saved" </dev/tty 2>/dev/null
-  exit $_sa_rc
+  exit $?
 fi
