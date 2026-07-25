@@ -161,6 +161,13 @@ in
         '';
       };
     };
+
+    shell = {
+      enable = lib.mkEnableOption "appearance detection script (bat/fzf dark/light)" // { default = true; };
+      # Hand-maintained support script (not a generator output). Installed to a
+      # stable path so consumers can source it without referencing the nix store.
+      # Caten sources it directly from the themes package instead.
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -228,6 +235,13 @@ in
         mkYaziEntries "${cfg.package}/share/yazi"
           "${config.xdg.configHome}/yazi/flavors" cfg.yazi.variants
       ))
+
+      # Appearance detection script (sourced by consumers to pick a dark/light
+      # variant for programs with no native switching, e.g. bat and fzf).
+      (lib.mkIf cfg.shell.enable {
+        "${config.xdg.configHome}/senzu/senzu-appearance.sh".source =
+          "${cfg.package}/share/shell/senzu-appearance.sh";
+      })
     ];
   };
 }

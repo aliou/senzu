@@ -34,6 +34,8 @@
 
 - **Pre-commit hooks** (via git-hooks.nix): biome check, typecheck, themes-up-to-date (regenerates `share/` and fails if changed), lockfile-up-to-date (`pnpm install --frozen-lockfile` fails if drift).
 
+- **Hand-maintained `share/` files**: `share/` is almost entirely generator output, but `share/shell/senzu-appearance.sh` is a hand-maintained support script (appearance detection for bat/fzf dark/light switching). It is not produced by a generator; `pnpm generate` leaves it untouched. The themes package still ships it via `cp -r share/*`.
+
 ## Code Style & Conventions
 
 - **Tooling**: `pnpm` for script execution, `tsx` as the TypeScript runner, `tsdown` for CLI builds.
