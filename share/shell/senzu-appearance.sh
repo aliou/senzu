@@ -10,11 +10,18 @@
 #
 # Detection order:
 #   1. SENZU_APPEARANCE (or legacy CATEN_APPEARANCE) env override
-#   2. OSC 11 background-color query (Ghostty and other modern terminals);
-#      background luminance decides dark/light. Timeout-protected.
+#   2. OSC 11 background-color query via tmux passthrough when inside tmux
+#      (forwards the query to the outer terminal, e.g. Ghostty), or direct
+#      OSC 11 when not in tmux. Background luminance decides dark/light.
 #   3. macOS `defaults read -g AppleInterfaceStyle`
 #   4. Linux `gsettings ... color-scheme`
 #   5. default: light
+#
+# Inside tmux, a direct OSC 11 query is answered by tmux with its own
+# (possibly stale) bg color, not the outer terminal's current theme. So when
+# $TMUX is set we wrap the query in a tmux passthrough sequence
+# (\ePtmux;...\e\\) so the outer terminal (Ghostty) receives it and replies.
+# Requires tmux `allow-passthrough on`.
 #
 # The OSC 11 query uses `read -t`/`-d`, which are zsh/bash extensions. When
 # sourced into zsh (the only current consumer) it works fully; under a bare
@@ -75,14 +82,21 @@ senzu_variant() {
 #   \e]11;rgb:RR/GG/BB\a            (BEL-terminated)
 _senzu_osc11_bg() {
   _sa_reply=""
-  # Send the query straight to the tty so it works even when stdout is piped.
-  printf '\033]11;?\033\\' >/dev/tty 2>/dev/null || return 1
+  # When inside tmux, a direct OSC 11 is answered by tmux with its own
+  # (possibly stale) bg, not the outer terminal's. Wrap the query in a tmux
+  # passthrough (\ePtmux;...\e\\) so the outer terminal (Ghostty) receives it
+  # and replies. Requires tmux `allow-passthrough on`.
+  if [ -n "${TMUX:-}" ]; then
+    printf '\033Ptmux;\033]11;?\033\\\033\\' >/dev/tty 2>/dev/null || return 1
+  else
+    printf '\033]11;?\033\\' >/dev/tty 2>/dev/null || return 1
+  fi
   # Consume up to the leading ESC of the reply (reads nothing, eats the ESC).
   # Time out + return if the terminal doesn't speak OSC 11.
-  IFS= read -r -t 0.1 -d $'\033' _sa_discard </dev/tty 2>/dev/null || return 1
+  IFS= read -r -t 0.2 -d $'\033' _sa_discard </dev/tty 2>/dev/null || return 1
   # Read until the ST backslash; on BEL-terminated replies this times out and
   # leaves the BEL inside _sa_reply, which the parser strips below.
-  IFS= read -r -t 0.1 -d $'\\' _sa_reply </dev/tty 2>/dev/null || true
+  IFS= read -r -t 0.2 -d $'\\' _sa_reply </dev/tty 2>/dev/null || true
   case "$_sa_reply" in
     *"]11;rgb:"*) ;;
     *) return 1 ;;
