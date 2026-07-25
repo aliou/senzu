@@ -116,3 +116,28 @@ _senzu_osc11_bg() {
   fi
   return 0
 }
+
+# When executed (not sourced), print the variant for the current appearance.
+# Usage: senzu-appearance.sh <dark-variant> <light-variant>
+# With no args, prints "dark"/"light".
+#
+# Running this as a subprocess (e.g. "$(senzu-appearance.sh senzu senzu-light)")
+# is the leak-safe way to query OSC 11 from a shell hook: the subprocess is the
+# sole reader of /dev/tty (the parent shell's line editor is blocked waiting
+# for the command substitution), so the terminal's reply cannot be grabbed
+# and rendered as garbage by ZLE. We also disable echo on /dev/tty during the
+# query so any stray bytes are never echoed.
+if [ "${0##*/}" = "senzu-appearance.sh" ]; then
+  if [ -c /dev/tty ]; then
+    _sa_saved=$(stty -g </dev/tty 2>/dev/null) &&
+      stty -echo -icanon min 0 </dev/tty 2>/dev/null
+  fi
+  if [ $# -ge 2 ]; then
+    senzu_variant "$1" "$2"
+  else
+    senzu_appearance
+  fi
+  _sa_rc=$?
+  [ -n "${_sa_saved:-}" ] && stty "$_sa_saved" </dev/tty 2>/dev/null
+  exit $_sa_rc
+fi
