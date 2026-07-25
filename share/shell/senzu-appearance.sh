@@ -56,6 +56,17 @@ senzu_appearance() {
   return 0
 }
 
+# Print the variant name for the current appearance, given a dark and light
+# candidate (in that order). Defaults to the light candidate unless
+# senzu_appearance explicitly prints "dark". Used by per-tool wrappers/hooks
+# (bat, fzf) so the dark/light -> variant mapping lives in one place.
+senzu_variant() {
+  case "$(senzu_appearance)" in
+    dark) printf '%s' "$1" ;;
+    *) printf '%s' "$2" ;;
+  esac
+}
+
 # Query the terminal background via OSC 11 and print "dark"/"light" from its
 # luminance. Returns nonzero (prints nothing) if the terminal doesn't reply.
 # Reply shapes handled (Ghostty defaults to 16-bit, ST-terminated):
