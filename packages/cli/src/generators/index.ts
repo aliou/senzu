@@ -2,6 +2,7 @@ import type { Generator } from "../core/types";
 import { BatGenerator } from "./bat";
 import { FzfGenerator } from "./fzf";
 import { GhosttyGenerator } from "./ghostty";
+import { LazygitGenerator } from "./lazygit";
 import { NeovimGenerator } from "./neovim";
 import { PiGenerator } from "./pi";
 import { TextMateGenerator } from "./textmate";
@@ -15,6 +16,7 @@ export { FamilyGenerator, PerPaletteGenerator } from "./base";
 export { BatGenerator } from "./bat";
 export { FzfGenerator } from "./fzf";
 export { GhosttyGenerator } from "./ghostty";
+export { LazygitGenerator } from "./lazygit";
 export { NeovimGenerator } from "./neovim";
 export { PiGenerator } from "./pi";
 export { TextMateGenerator } from "./textmate";
@@ -30,6 +32,7 @@ for (const g of [
   new GhosttyGenerator(),
   new WeztermGenerator(),
   new WtermGenerator(),
+  new LazygitGenerator(),
   new TmuxGenerator(),
   new NeovimGenerator(),
   new ZedGenerator(),

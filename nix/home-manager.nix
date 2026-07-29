@@ -90,6 +90,15 @@ in
       };
     };
 
+    lazygit = {
+      enable = lib.mkEnableOption "Lazygit theme overrides" // { default = true; };
+      variants = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = "Which variants to install. Null installs all.";
+      };
+    };
+
     tmux = {
       enable = lib.mkEnableOption "tmux themes" // { default = true; };
       variants = lib.mkOption {
@@ -192,6 +201,12 @@ in
       (lib.mkIf cfg.wezterm.enable (
         mkFileEntries "${cfg.package}/share/wezterm"
           "${config.xdg.configHome}/wezterm/colors" cfg.wezterm.variants ".toml"
+      ))
+
+      # Lazygit theme overrides
+      (lib.mkIf cfg.lazygit.enable (
+        mkFileEntries "${cfg.package}/share/lazygit"
+          "${config.xdg.configHome}/lazygit" cfg.lazygit.variants ".yml"
       ))
 
       # tmux themes
