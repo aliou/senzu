@@ -34,6 +34,41 @@
         "aarch64-linux"
         "x86_64-linux"
       ];
+
+      # Prebuilt senzu-appearance binaries, built by the release workflow and
+      # attached to the GitHub release. Consumers download instead of
+      # compiling: a Rust toolchain on every machine, for one small binary,
+      # every time the input moves, is not a good trade.
+      #
+      # The marker comments are load-bearing: .github/workflows/version.yml
+      # rewrites the version and the hashes together after each release. Do
+      # not reformat them.
+      #
+      # This version is deliberately not `version` above. That one moves with
+      # the release commit, while the binaries only exist once the build job
+      # has uploaded them; pinning them separately keeps every commit pointing
+      # at a release that actually has assets.
+      appearanceVersion = "0.0.0"; # appearance-version
+
+      # What the hashes hold until a release has uploaded binaries. While they
+      # are still placeholders the flake builds from source instead of
+      # fetching something that does not exist.
+      appearancePlaceholder = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+      appearanceBinaries = {
+        "aarch64-darwin" = {
+          suffix = "darwin-arm64";
+          hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # darwin
+        };
+        "aarch64-linux" = {
+          suffix = "linux-arm64";
+          hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # linux-arm64
+        };
+        "x86_64-linux" = {
+          suffix = "linux-x64";
+          hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # linux-x64
+        };
+      };
     in
     systemIndependent
     // flake-utils.lib.eachSystem systems (
@@ -61,6 +96,59 @@
             platforms = platforms.all;
           };
         };
+
+        # Terminal appearance probe. The only component allowed to query the
+        # tty; see docs/appearance-detection.md.
+        #
+        # Built from source: for development, and the fallback when a release
+        # has no binary for a platform. `cargo test` runs in the build,
+        # including the pty tests.
+        appearance-source = pkgs.rustPlatform.buildRustPackage {
+          pname = "senzu-appearance";
+          inherit version;
+
+          src = ./native;
+
+          cargoLock.lockFile = ./native/Cargo.lock;
+
+          meta = with pkgs.lib; {
+            description = "Terminal appearance probe for Senzu";
+            license = licenses.mit;
+            mainProgram = "senzu-appearance";
+            platforms = platforms.unix;
+          };
+        };
+
+        # The released binary. Linux builds are static musl, so there is no
+        # interpreter to patch and they run on NixOS as-is.
+        appearance-binary =
+          let
+            binary =
+              appearanceBinaries.${system}
+                or (throw "senzu-appearance: no prebuilt binary for ${system}; use .#appearance-source");
+          in
+          pkgs.stdenv.mkDerivation {
+            pname = "senzu-appearance";
+            version = appearanceVersion;
+
+            src = pkgs.fetchurl {
+              url = "https://github.com/aliou/senzu/releases/download/v${appearanceVersion}/senzu-appearance-${binary.suffix}";
+              inherit (binary) hash;
+            };
+
+            dontUnpack = true;
+
+            installPhase = ''
+              install -Dm755 $src $out/bin/senzu-appearance
+            '';
+
+            meta = with pkgs.lib; {
+              description = "Terminal appearance probe for Senzu (prebuilt)";
+              license = licenses.mit;
+              mainProgram = "senzu-appearance";
+              platforms = builtins.attrNames appearanceBinaries;
+            };
+          };
 
         # Live `senzu` bin for the devShell: runs the CLI through tsx against the
         # working tree so edits to generators/config take effect immediately.
@@ -139,6 +227,17 @@
         packages = {
           default = themes;
           themes = themes;
+
+          # Download when a release has published binaries for this system,
+          # compile otherwise. Nothing to switch by hand: the release workflow
+          # fills in the hashes.
+          appearance =
+            if (appearanceBinaries.${system}.hash or appearancePlaceholder) == appearancePlaceholder then
+              appearance-source
+            else
+              appearance-binary;
+          appearance-binary = appearance-binary;
+          appearance-source = appearance-source;
         };
 
         devShells.default = pkgs.mkShell {
@@ -147,6 +246,13 @@
             nodejs_24
             pnpm
             senzu-dev
+            just
+            jq
+            # Appearance probe toolchain.
+            cargo
+            rustc
+            clippy
+            rustfmt
           ];
         };
       }

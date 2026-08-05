@@ -26,6 +26,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.released_version }}
 
     steps:
       - name: Checkout
@@ -70,6 +74,10 @@ jobs:
           # in sync so the release tag (read from root) matches the CLI.
           CLI_VERSION=$(jq -r '.version' packages/cli/package.json)
           jq --arg v "$CLI_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          # The appearance probe ships as a binary attached to the release, so
+          # its version has to match the tag it is published under.
+          sed -i "0,/^version = .*/s//version = \"${CLI_VERSION}\"/" native/Cargo.toml
+          sed -i "/^name = \"senzu-appearance\"$/{n;s/^version = .*/version = \"${CLI_VERSION}\"/}" native/Cargo.lock
           VERSION="$CLI_VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -88,6 +96,7 @@ jobs:
           delete-branch: true
 
       - name: Release
+        id: release
         if: steps.check.outputs.hasChangesets == 'false' || inputs.force_release
         run: |
           VERSION=$(jq -r '.version' package.json)
@@ -114,5 +123,128 @@ jobs:
           gh release create "${TAG}" \
             --title "${TAG}" \
             --generate-notes
+
+          echo "released=true" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "released_version=${VERSION}" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Build senzu-appearance once per release so no machine has to compile it.
+  # Linux targets are static musl: no interpreter to patch, runs on NixOS and
+  # anything else. macOS is built on an arm64 runner.
+  binaries:
+    name: Build ${{ matrix.artifact }}
+    needs: version
+    if: needs.version.outputs.released == 'true'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            artifact: senzu-appearance-darwin-arm64
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact: senzu-appearance-linux-x64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            artifact: senzu-appearance-linux-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
+      - name: Install musl toolchain
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Add Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      # Every runner is native to its target, so the tests that matter (the
+      # pty ones) actually run on the platform being shipped.
+      - name: Test
+        run: cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --manifest-path native/Cargo.toml --release --target ${{ matrix.target }}
+
+      - name: Stage artifact
+        run: |
+          set -euo pipefail
+          cp "native/target/${{ matrix.target }}/release/senzu-appearance" "${{ matrix.artifact }}"
+          chmod +x "${{ matrix.artifact }}"
+          ./${{ matrix.artifact }} --version
+
+      - name: Compute the nix hash
+        run: |
+          set -euo pipefail
+          HASH="sha256-$(openssl dgst -binary -sha256 '${{ matrix.artifact }}' | openssl base64 -A)"
+          echo "$HASH" > "${{ matrix.artifact }}.sha256"
+          echo "$HASH"
+
+      - name: Upload hash artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-hash
+          path: ${{ matrix.artifact }}.sha256
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.version.outputs.tag }}" "${{ matrix.artifact }}" --clobber
+
+  # Point the flake at the binaries that were just published, so consumers
+  # fetch them instead of building.
+  flake-hashes:
+    name: Update flake hashes
+    needs: [version, binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download hashes
+        uses: actions/download-artifact@v4
+        with:
+          path: hashes
+          merge-multiple: true
+
+      # Version and hashes move together, so every commit on main points at a
+      # release whose assets exist.
+      - name: Rewrite flake.nix
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.version.outputs.version }}"
+          DARWIN=$(cat hashes/senzu-appearance-darwin-arm64.sha256)
+          LINUX_ARM=$(cat hashes/senzu-appearance-linux-arm64.sha256)
+          LINUX_X64=$(cat hashes/senzu-appearance-linux-x64.sha256)
+
+          sed -i "s|appearanceVersion = \"[^\"]*\"; # appearance-version|appearanceVersion = \"${VERSION}\"; # appearance-version|" flake.nix
+          sed -i "s|hash = \"sha256-[^\"]*\"; # darwin|hash = \"${DARWIN}\"; # darwin|" flake.nix
+          sed -i "s|hash = \"sha256-[^\"]*\"; # linux-arm64|hash = \"${LINUX_ARM}\"; # linux-arm64|" flake.nix
+          sed -i "s|hash = \"sha256-[^\"]*\"; # linux-x64|hash = \"${LINUX_X64}\"; # linux-x64|" flake.nix
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- flake.nix; then
+            echo "No hash changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.nix
+          git commit -m "chore: point flake at senzu-appearance binaries for ${{ needs.version.outputs.tag }}"
+          git push origin main
