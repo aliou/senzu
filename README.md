@@ -59,4 +59,11 @@ Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown 
 
 </details>
 
+<details>
+<summary>Senzu Cold</summary>
+
+![Senzu Cold theme preview](.github/assets/previews/senzu-cold.svg)
+
+</details>
+
 <!-- END THEME PREVIEWS -->
