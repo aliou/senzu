@@ -1,6 +1,6 @@
 [package]
 name = "senzu-appearance"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "Report the terminal's current appearance (dark/light) via OSC 11"
 license = "MIT"
