@@ -37,6 +37,10 @@ typeset -g _senzu_override=""
 typeset -g _senzu_last_probe_ms=0
 typeset -g _senzu_fzf_base="${FZF_DEFAULT_OPTS:-}"
 
+# Where the per-variant fzf color snippets live. Defaults to the share/ dir
+# this hook ships in; consumers may override before sourcing.
+typeset -g SENZU_SHARE_DIR="${SENZU_SHARE_DIR:-${${(%):-%x}:A:h:h}}"
+
 zmodload -F zsh/datetime b:strftime 2>/dev/null
 
 _senzu_now_ms() {
@@ -69,8 +73,8 @@ _senzu_apply() {
   export DELTA_FEATURES="+senzu-${appearance}"
 
   # fzf has no theme file: re-apply the base options plus this variant's spec.
-  local snippet="${SENZU_SHARE_DIR:-}/fzf/${variant}.sh"
-  if [[ -n "${SENZU_SHARE_DIR:-}" && -f "$snippet" ]]; then
+  local snippet="${SENZU_SHARE_DIR}/fzf/${variant}.sh"
+  if [[ -f "$snippet" ]]; then
     FZF_DEFAULT_OPTS="$_senzu_fzf_base"
     source "$snippet"
   fi
