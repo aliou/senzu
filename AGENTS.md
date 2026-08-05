@@ -2,6 +2,8 @@
 
 ## Commands
 
+`just` lists every recipe; `just check` runs what CI runs. The `pnpm` scripts below still work and are what the recipes call.
+
 - **Generate themes**: `pnpm generate` (regenerates all `share/` outputs from `config.json`)
 - **List palettes/targets**: `pnpm list`
 - **Install themes**: `pnpm install:themes` (symlinks to default dirs) or `pnpm install:themes -- install <target> [variant]`
@@ -9,20 +11,22 @@
 - **Lint/Format**: `pnpm lint` (check) or `pnpm format` (apply fixes). Uses Biome with `@aliou/biome-plugins`.
 - **Typecheck**: `pnpm typecheck` (`tsc --noEmit`)
 - **Changeset**: `pnpm changeset`
-- **Dev shell**: `nix develop` or `use flake` (direnv) — provides Node.js 24 + pnpm
+- **Appearance probe**: `just test-native` (58 tests), `just build-native`, `just clippy`
+- **Dev shell**: `nix develop` or `use flake` (direnv) — Node.js 24, pnpm, just, and the Rust toolchain
 
 ## Architecture
 
-`senzu` is a single-package Node.js CLI that generates color scheme files for multiple terminal and editor applications from one canonical source of truth (`config.json`).
+`senzu` generates color scheme files for multiple terminal and editor applications from one canonical source of truth (`config.json`). The generator is a pnpm workspace package; a small Rust binary handles terminal appearance detection.
 
 - **Structure**:
-  - `src/core/` — types, zod schema, config loader
-  - `src/generators/` — one generator per target format (ghostty, wezterm, wterm, tmux, neovim, zed, pi, textmate, bat, fzf)
-  - `src/cli/` — CLI entry point (`generate`, `list`, `install` commands)
-  - `config.json` — canonical palette definitions for all 9 variants
+  - `packages/cli/src/core/` — types, zod schema, config loader
+  - `packages/cli/src/generators/` — one generator per target format
+  - `packages/cli/src/cli/` — CLI entry point (`generate`, `list`, `install`, `preview`)
+  - `config.json` — canonical palette definitions for all variants
   - `share/` — generated output (committed, consumed by nix)
-  - `nix/home-manager.nix` — Nix home-manager module for installing themes
-  - `flake.nix` — Nix flake: themes package + CLI app + devshell with git-hooks
+  - `native/` — `senzu-appearance`, the terminal appearance probe (Rust). See `docs/appearance-detection.md`
+  - `nix/home-manager.nix` — Nix home-manager module for installing themes and the probe
+  - `flake.nix` — Nix flake: themes package, appearance probe, devshell with git-hooks
 
 - **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
@@ -30,7 +34,9 @@
 
 - **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
 
-- **Versioning**: The version in `package.json` is the single source. The flake reads it for both the themes package (`senzu-themes`) and the CLI (`senzu`). Use changesets to bump.
+- **Versioning**: The version in `package.json` is the single source. The flake reads it for the themes package, and `native/Cargo.toml` must match it because the probe binary is published under the release tag (`just sync-version`). Use changesets to bump.
+
+- **Appearance probe distribution**: the release workflow builds `senzu-appearance` for `aarch64-darwin`, `aarch64-linux` (static musl) and `x86_64-linux` (static musl), attaches them to the GitHub release, and rewrites `appearanceVersion` plus the three hashes in `flake.nix`. Those marker comments (`# appearance-version`, `# darwin`, `# linux-arm64`, `# linux-x64`) are load-bearing — do not reformat them. While the hashes are placeholders, `.#appearance` builds from source.
 
 - **Pre-commit hooks** (via git-hooks.nix): biome check, typecheck, themes-up-to-date (regenerates `share/` and fails if changed), lockfile-up-to-date (`pnpm install --frozen-lockfile` fails if drift).
 

@@ -29,6 +29,13 @@ let
     else
       null;
 
+  # The appearance probe: the only component allowed to query the terminal.
+  defaultAppearancePackage =
+    if inputs != null && inputs ? senzu then
+      inputs.senzu.packages.${pkgs.system}.appearance
+    else
+      null;
+
   # Helper to build the list of variants to install for a program.
   # If `variants` is null, install all. Otherwise install only the listed ones.
   variantsToInstall = variants:
@@ -173,14 +180,34 @@ in
     };
 
     shell = {
-      enable = lib.mkEnableOption "appearance detection script (bat/fzf dark/light)" // { default = true; };
-      # Hand-maintained support script (not a generator output). Installed to a
-      # stable path so consumers can source it without referencing the nix store.
-      # Caten sources it directly from the themes package instead.
+      enable = lib.mkEnableOption "appearance shell hook and compatibility shim" // { default = true; };
+      # Hand-maintained support files (not generator output). Installed to a
+      # stable path so consumers can source them without referencing the nix
+      # store. See docs/appearance-detection.md.
+    };
+
+    appearance = {
+      enable = lib.mkEnableOption "senzu-appearance terminal probe" // { default = true; };
+
+      package = lib.mkOption {
+        type = lib.types.nullOr lib.types.package;
+        default = defaultAppearancePackage;
+        description = ''
+          The senzu-appearance probe. Queries the terminal background with
+          OSC 11 under a lock with echo disabled, and caches the answer.
+
+          Only the shell hook should run it. Tools (bat, delta, fzf) read the
+          variant from the environment the hook exports; a tool that probes on
+          every invocation echoes the terminal's reply into your output.
+        '';
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
+    home.packages = lib.optional (cfg.appearance.enable && cfg.appearance.package != null)
+      cfg.appearance.package;
+
     assertions = [
       {
         assertion = cfg.package != null;
@@ -252,9 +279,14 @@ in
           "${config.xdg.configHome}/yazi/flavors" cfg.yazi.variants
       ))
 
-      # Appearance detection script (sourced by consumers to pick a dark/light
-      # variant for programs with no native switching, e.g. bat and fzf).
+      # Appearance hook and compatibility shim. Source the hook from your zsh
+      # config to keep bat, delta and fzf on the current variant:
+      #
+      #   export SENZU_SHARE_DIR=${cfg.package}/share
+      #   source ${config.xdg.configHome}/senzu/senzu-hook.zsh senzu senzu-light
       (lib.mkIf cfg.shell.enable {
+        "${config.xdg.configHome}/senzu/senzu-hook.zsh".source =
+          "${cfg.package}/share/shell/senzu-hook.zsh";
         "${config.xdg.configHome}/senzu/senzu-appearance.sh".source =
           "${cfg.package}/share/shell/senzu-appearance.sh";
       })

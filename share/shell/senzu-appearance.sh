@@ -1,56 +1,69 @@
 #!/bin/sh
-# senzu-appearance.sh — print the terminal's current appearance ("dark"/"light").
+# senzu-appearance.sh — compatibility shim around the senzu-appearance binary.
 #
-# This is a hand-maintained support script (NOT a generator output) shipped in
-# share/ so the themes package exposes it at share/shell/senzu-appearance.sh.
-# It is sourced by the senzu home-manager module and by caten to drive
-# dark/light variant selection for programs with no native appearance
-# switching (bat, fzf). It defines `senzu_appearance`, which prints "dark" or
-# "light" and returns 0.
+# History: this script used to query the terminal itself with OSC 11. Every
+# caller (bat, delta, fzf wrappers) ran it per invocation, so N processes
+# fought over one tty. Without `stty -echo` the terminal echoed the reply as
+# garbage; with it, concurrent stty calls destabilized the terminal. Both
+# symptoms had the same cause. See docs/appearance-detection.md.
 #
-# Detection order:
-#   1. SENZU_APPEARANCE (or legacy CATEN_APPEARANCE) env override
-#   2. OSC 11 background-color query via tmux passthrough when inside tmux
-#      (forwards the query to the outer terminal, e.g. Ghostty), or direct
-#      OSC 11 when not in tmux. Background luminance decides dark/light.
-#   3. macOS `defaults read -g AppleInterfaceStyle`
-#   4. Linux `gsettings ... color-scheme`
-#   5. default: light
+# The tty query now lives in the `senzu-appearance` binary, which takes a lock,
+# disables echo for the few milliseconds the reply is in flight, and restores
+# the terminal on every exit path. This shim never touches the tty on its own:
+# it delegates to that binary when it is available, and otherwise answers from
+# the environment, the cache, or the OS preference.
 #
-# Inside tmux, a direct OSC 11 query is answered by tmux with its own
-# (possibly stale) bg color, not the outer terminal's current theme. So when
-# $TMUX is set we wrap the query in a tmux passthrough sequence
-# (\ePtmux;...\e\\) so the outer terminal (Ghostty) receives it and replies.
-# Requires tmux `allow-passthrough on`.
-#
-# The OSC 11 query uses `read -t`/`-d`, which are zsh/bash extensions. When
-# sourced into zsh (the only current consumer) it works fully; under a bare
-# POSIX /bin/sh the OSC step degrades gracefully (read fails, falls through to
-# the OS fallbacks).
+# Sourced: defines senzu_appearance and senzu_variant.
+# Executed: senzu-appearance.sh [DARK_VARIANT LIGHT_VARIANT]
 
+# Path to the binary; falls back to whatever is on PATH.
+: "${SENZU_APPEARANCE_BIN:=senzu-appearance}"
+
+_senzu_cache_file() {
+  if [ -n "${SENZU_APPEARANCE_CACHE:-}" ]; then
+    printf '%s' "$SENZU_APPEARANCE_CACHE"
+    return 0
+  fi
+  _sa_dir="${XDG_RUNTIME_DIR:-/tmp/senzu-$(id -u)}"
+  [ -n "${XDG_RUNTIME_DIR:-}" ] && _sa_dir="$XDG_RUNTIME_DIR/senzu"
+  _sa_tty="$(tty 2>/dev/null || echo notty)"
+  printf '%s/appearance-%s' "$_sa_dir" "$(printf '%s' "${_sa_tty#/}" | tr '/' '-')"
+}
+
+# Prints "dark" or "light". Never writes to the terminal.
 senzu_appearance() {
   # 1. explicit override
-  _sa_ov="${SENZU_APPEARANCE:-${CATEN_APPEARANCE:-}}"
-  case "$_sa_ov" in
-    dark|light) printf '%s' "$_sa_ov"; return 0 ;;
+  case "${SENZU_APPEARANCE:-}" in
+    dark|light) printf '%s' "$SENZU_APPEARANCE"; return 0 ;;
   esac
 
-  # 2. OSC 11 background query (needs a readable controlling tty)
-  if [ -c /dev/tty ]; then
-    _sa_res="$(_senzu_osc11_bg 2>/dev/null)" && [ -n "$_sa_res" ] && {
-      printf '%s' "$_sa_res"
-      return 0
-    }
+  # 2. the binary, which owns the tty query. --max-age bounds how often a
+  # legacy per-invocation caller can reach the terminal: without it, a tool
+  # wrapper in a loop would probe on every call, which is what this rewrite
+  # exists to stop. Callers that must never touch the tty should set
+  # SENZU_APPEARANCE or read the cache directly.
+  if command -v "$SENZU_APPEARANCE_BIN" >/dev/null 2>&1; then
+    _sa_out="$("$SENZU_APPEARANCE_BIN" --max-age "${SENZU_APPEARANCE_MAX_AGE_MS:-3000}" 2>/dev/null)"
+    case "$_sa_out" in
+      dark|light) printf '%s' "$_sa_out"; return 0 ;;
+    esac
   fi
 
-  # 3. macOS
+  # 3. cached answer from this terminal, at any age
+  _sa_cache="$(_senzu_cache_file)"
+  if [ -r "$_sa_cache" ]; then
+    read -r _sa_cached < "$_sa_cache"
+    case "$_sa_cached" in
+      dark|light) printf '%s' "$_sa_cached"; return 0 ;;
+    esac
+  fi
+
+  # 4. OS preference: not the terminal's background, but better than a guess
   if command -v defaults >/dev/null 2>&1 &&
      [ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" = "Dark" ]; then
     printf dark
     return 0
   fi
-
-  # 4. Linux gsettings
   if command -v gsettings >/dev/null 2>&1; then
     case "$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)" in
       *dark*) printf dark; return 0 ;;
@@ -59,14 +72,11 @@ senzu_appearance() {
   fi
 
   # 5. default
-  printf light
+  printf dark
   return 0
 }
 
-# Print the variant name for the current appearance, given a dark and light
-# candidate (in that order). Defaults to the light candidate unless
-# senzu_appearance explicitly prints "dark". Used by per-tool wrappers/hooks
-# (bat, fzf) so the dark/light -> variant mapping lives in one place.
+# Map the current appearance onto a dark/light variant pair.
 senzu_variant() {
   case "$(senzu_appearance)" in
     dark) printf '%s' "$1" ;;
@@ -74,74 +84,6 @@ senzu_variant() {
   esac
 }
 
-# Query the terminal background via OSC 11 and print "dark"/"light" from its
-# luminance. Returns nonzero (prints nothing) if the terminal doesn't reply.
-# Reply shapes handled (Ghostty defaults to 16-bit, ST-terminated):
-#   \e]11;rgb:RRRR/GGGG/BBBB\e\\   (16-bit, ST)
-#   \e]11;rgb:RR/GG/BB\e\\          (8-bit, ST)
-#   \e]11;rgb:RR/GG/BB\a            (BEL-terminated)
-_senzu_osc11_bg() {
-  _sa_reply=""
-  # When inside tmux, a direct OSC 11 is answered by tmux with its own
-  # (possibly stale) bg, not the outer terminal's. Wrap the query in a tmux
-  # passthrough (\ePtmux;...\e\\) so the outer terminal (Ghostty) receives it
-  # and replies. Requires tmux `allow-passthrough on`.
-  if [ -n "${TMUX:-}" ]; then
-    printf '\033Ptmux;\033]11;?\033\\\033\\' >/dev/tty 2>/dev/null || return 1
-  else
-    printf '\033]11;?\033\\' >/dev/tty 2>/dev/null || return 1
-  fi
-  # Consume up to the leading ESC of the reply (reads nothing, eats the ESC).
-  # Time out + return if the terminal doesn't speak OSC 11.
-  IFS= read -r -t 0.2 -d $'\033' _sa_discard </dev/tty 2>/dev/null || return 1
-  # Read until the ST backslash; on BEL-terminated replies this times out and
-  # leaves the BEL inside _sa_reply, which the parser strips below.
-  IFS= read -r -t 0.2 -d $'\\' _sa_reply </dev/tty 2>/dev/null || true
-  case "$_sa_reply" in
-    *"]11;rgb:"*) ;;
-    *) return 1 ;;
-  esac
-  # Drop the "]11;rgb:" prefix and any trailing terminator bytes (ESC/BEL/etc.).
-  _sa_rgb="${_sa_reply#]11;rgb:}"
-  _sa_rgb="${_sa_rgb%%[!0-9A-Fa-f/]*}"
-  _sa_r="${_sa_rgb%%/*}"
-  _sa_rest="${_sa_rgb#*/}"
-  _sa_g="${_sa_rest%%/*}"
-  _sa_b="${_sa_rest#*/}"
-  # Normalize 16-bit (4 hex digits) down to 8-bit by keeping the high byte.
-  [ ${#_sa_r} -gt 2 ] && _sa_r="${_sa_r%"${_sa_r#??}"}"
-  [ ${#_sa_g} -gt 2 ] && _sa_g="${_sa_g%"${_sa_g#??}"}"
-  [ ${#_sa_b} -gt 2 ] && _sa_b="${_sa_b%"${_sa_b#??}"}"
-  case "$_sa_r$_sa_g$_sa_b" in
-    *[!0-9A-Fa-f]*) return 1 ;;
-  esac
-  [ ${#_sa_r} -eq 0 ] && _sa_r=0
-  [ ${#_sa_g} -eq 0 ] && _sa_g=0
-  [ ${#_sa_b} -eq 0 ] && _sa_b=0
-  _sa_r=$(( 16#$_sa_r ))
-  _sa_g=$(( 16#$_sa_g ))
-  _sa_b=$(( 16#$_sa_b ))
-  # BT.601 luminance on 0-255; below the midpoint is dark.
-  _sa_lum=$(( (299 * _sa_r + 587 * _sa_g + 114 * _sa_b) / 1000 ))
-  if [ "$_sa_lum" -lt 128 ]; then
-    printf dark
-  else
-    printf light
-  fi
-  return 0
-}
-
-# When executed (not sourced), print the variant for the current appearance.
-# Usage: senzu-appearance.sh <dark-variant> <light-variant>
-# With no args, prints "dark"/"light".
-#
-# Running this as a subprocess (e.g. "$(senzu-appearance.sh senzu senzu-light)")
-# is the leak-safe way to query OSC 11 from a shell hook: the subprocess is the
-# sole reader of /dev/tty (the parent shell's line editor is blocked waiting
-# for the command substitution), so the terminal's reply cannot be grabbed
-# and rendered as garbage by ZLE. No stty manipulation here — putting the
-# shared terminal tty in raw mode destabilizes some terminal emulators
-# (Ghostty beachballs). The subprocess read with a timeout is enough.
 if [ "${0##*/}" = "senzu-appearance.sh" ]; then
   if [ $# -ge 2 ]; then
     senzu_variant "$1" "$2"
