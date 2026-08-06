@@ -70,6 +70,7 @@
     "text": "foreground",
     "thinkingText": "regentGrey",
     "selectedBg": "greyOne",
+    "scrollbarThumb": "tundora",
     "userMessageBg": "greyThree",
     "userMessageText": "foreground",
     "customMessageBg": "gravel",

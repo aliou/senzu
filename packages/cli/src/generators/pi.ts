@@ -38,6 +38,18 @@ function resolveColor(
   return targetHex;
 }
 
+function solidScrollbarThumb(palette: Palette): string {
+  const thumb = palette.ui["scrollbar.thumb.background"];
+  if (thumb && /^#[0-9a-fA-F]{6}$/.test(thumb)) return thumb;
+  return (
+    palette.ui["scrollbar.thumb.hover_background"] ??
+    palette.ui["scrollbar.thumb.border"] ??
+    palette.ui.border ??
+    palette.colors.tundora ??
+    "#404040"
+  );
+}
+
 const SLOT_DEFS: Record<
   string,
   { getSource: (p: Palette) => string | undefined; candidates: string[] }
@@ -81,6 +93,10 @@ const SLOT_DEFS: Record<
     getSource: (p) =>
       p.colors.grey_one ?? p.ui["surface.background"] ?? "#1c1c1c",
     candidates: ["greyOne"],
+  },
+  scrollbarThumb: {
+    getSource: solidScrollbarThumb,
+    candidates: ["tundora", "greyThree", "brightGrey"],
   },
   userMessageBg: {
     getSource: (p) => p.colors.grey_three ?? "#333333",
