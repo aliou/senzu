@@ -1,5 +1,12 @@
 # @senzu/cli
 
+## 0.8.0
+
+### Minor Changes
+
+- cbb9a71: Add a Herdr generator that emits manual-copy TOML theme snippets for every Senzu variant.
+- 661e981: Safely install an explicit Senzu variant into Herdr's existing config with comment-preserving TOML updates, timestamped backups, dry runs, and guarded symlink handling. Expose Herdr theme attrsets through the flake library for declarative Nix configuration.
+
 ## 0.7.1
 
 ### Patch Changes
