@@ -3,6 +3,7 @@ import { BatGenerator } from "./bat";
 import { FzfGenerator } from "./fzf";
 import { GhosttyGenerator } from "./ghostty";
 import { HerdrGenerator } from "./herdr";
+import { HunkGenerator } from "./hunk";
 import { LazygitGenerator } from "./lazygit";
 import { NeovimGenerator } from "./neovim";
 import { PiGenerator } from "./pi";
@@ -18,6 +19,7 @@ export { BatGenerator } from "./bat";
 export { FzfGenerator } from "./fzf";
 export { GhosttyGenerator } from "./ghostty";
 export { HerdrGenerator } from "./herdr";
+export { HunkGenerator } from "./hunk";
 export { LazygitGenerator } from "./lazygit";
 export { NeovimGenerator } from "./neovim";
 export { PiGenerator } from "./pi";
@@ -37,6 +39,7 @@ for (const g of [
   new LazygitGenerator(),
   new TmuxGenerator(),
   new HerdrGenerator(),
+  new HunkGenerator(),
   new NeovimGenerator(),
   new ZedGenerator(),
   new PiGenerator(),

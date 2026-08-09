@@ -24,6 +24,14 @@ ad.programs.herdr.settings.theme = inputs.senzu.lib.herdrTheme "senzu-muted";
 
 All variants are also available under `inputs.senzu.lib.herdrThemes`.
 
+## Hunk
+
+Hunk reads themes from its TOML config rather than standalone files, so senzu
+ships merge-ready snippets in `share/hunk/`. For hunk >= 0.18, copy the tables
+from `share/hunk/<variant>.toml` into `~/.config/hunk/config.toml` and set
+`theme = "<variant>"`. For hunk <= 0.17, use `share/hunk/<variant>.legacy.toml`
+instead, which fills the single-slot `[custom_theme]` table (`theme = "custom"`).
+
 <!-- BEGIN THEME PREVIEWS -->
 ## Theme previews
 
