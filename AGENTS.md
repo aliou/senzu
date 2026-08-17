@@ -4,7 +4,7 @@
 
 `just` lists every recipe; `just check` runs what CI runs. The `pnpm` scripts below still work and are what the recipes call.
 
-- **Generate themes**: `pnpm generate` (regenerates all `share/` outputs from `config.json`)
+- **Generate themes**: `pnpm generate` (regenerates all `share/` outputs from `themes/`)
 - **List palettes/targets**: `pnpm list`
 - **Install themes**: `pnpm install:themes` (symlinks to default dirs) or `pnpm install:themes -- install <target> [variant]`
 - **Build CLI**: `pnpm build` (tsdown -> dist/)
@@ -16,13 +16,13 @@
 
 ## Architecture
 
-`senzu` generates color scheme files for multiple terminal and editor applications from one canonical source of truth (`config.json`). The generator is a pnpm workspace package; a small Rust binary handles terminal appearance detection.
+`senzu` generates color scheme files for multiple terminal and editor applications from canonical family files in `themes/`. The generator is a pnpm workspace package; a small Rust binary handles terminal appearance detection.
 
 - **Structure**:
   - `packages/cli/src/core/` — types, zod schema, config loader
   - `packages/cli/src/generators/` — one generator per target format
   - `packages/cli/src/cli/` — CLI entry point (`generate`, `list`, `install`, `preview`)
-  - `config.json` — canonical palette definitions for all variants
+  - `themes/` — canonical palette definitions split by family, with `index.json` preserving variant order
   - `share/` — generated output (committed, consumed by nix)
   - `native/` — `senzu-appearance`, the terminal appearance probe (Rust). See `docs/appearance-detection.md`
   - `nix/home-manager.nix` — Nix home-manager module for installing themes and the probe
@@ -47,12 +47,12 @@
 - **Tooling**: `pnpm` for script execution, `tsx` as the TypeScript runner, `tsdown` for CLI builds.
 - **Formatting**: Enforced by **Biome** — double quotes, 2-space indent, organized imports.
 - **TypeScript**: Strict mode, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`. Use `import type` for type-only imports.
-- **Validation**: `zod` validates `config.json` at load time.
+- **Validation**: `zod` validates `themes/` at load time.
 - **Deterministic output**: Generators produce stable key order and trailing newlines so `share/` diffs stay clean.
 
 ## Adding a new variant
 
-1. Add the palette entry to `config.json` under `palettes` with all required fields.
+1. Add the palette entry to the relevant family file in `themes/` and add its key to `themes/index.json`.
 2. Run `pnpm generate` to produce output for all targets.
 3. Add the variant name to `allVariants` in `nix/home-manager.nix`.
 

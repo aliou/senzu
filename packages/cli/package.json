@@ -1,6 +1,6 @@
 {
   "name": "@senzu/cli",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Canonical color scheme generator CLI for terminal and editor applications",
   "private": true,
   "type": "module",

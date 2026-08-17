@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { loadConfig } from "../core/config";
 import type { Palette } from "../core/types";
 import { SAMPLES, type Sample, type Span } from "./samples";
 
@@ -22,15 +23,11 @@ interface Options {
   previews: string;
 }
 
-interface PreviewConfig {
-  palettes: Record<string, Palette>;
-}
-
 async function main(): Promise<void> {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      config: { type: "string", short: "c", default: "./config.json" },
+      config: { type: "string", short: "c", default: "./themes" },
       readme: { type: "string", default: "./README.md" },
       previews: { type: "string", default: DEFAULT_PREVIEW_DIR },
     },
@@ -46,9 +43,7 @@ async function main(): Promise<void> {
 }
 
 function generateReadmePreviews(options: Options): void {
-  const config = JSON.parse(
-    readFileSync(resolve(options.config), "utf-8"),
-  ) as PreviewConfig;
+  const config = loadConfig(resolve(options.config));
   const sample = SAMPLES[0];
   if (!sample) throw new Error("No preview sample is configured.");
 

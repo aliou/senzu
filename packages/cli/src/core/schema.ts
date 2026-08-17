@@ -4,6 +4,17 @@ const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/, {
   message: "Must be a valid hex color (e.g., #cf6a4c or #cf6a4c88)",
 });
 
+const variantKey = z
+  .string()
+  .min(1)
+  .refine(
+    (key) => {
+      if (!/^(0|[1-9]\d*)$/.test(key)) return true;
+      return Number(key) > 4294967294;
+    },
+    { message: "Must not be an array-index-like key" },
+  );
+
 const nullableHex = z.union([hexColor, z.null()]);
 
 const ansiColorsSchema = z.object({
@@ -49,10 +60,26 @@ const paletteSchema = z.object({
   players: z.array(playerColorsSchema),
 });
 
+const themeVariantSchema = z.object({
+  key: variantKey,
+  palette: paletteSchema,
+});
+
 export const configSchema = z.object({
   name: z.string().min(1),
   author: z.string().min(1),
-  palettes: z.record(paletteSchema),
+  palettes: z.record(variantKey, paletteSchema),
+});
+
+export const themeFamilySchema = z.object({
+  family: z.string().min(1),
+  variants: z.array(themeVariantSchema),
+});
+
+export const themeIndexSchema = z.object({
+  name: z.string().min(1),
+  author: z.string().min(1),
+  variants: z.array(variantKey),
 });
 
 export type ConfigSchema = z.infer<typeof configSchema>;

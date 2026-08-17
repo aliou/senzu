@@ -58,7 +58,7 @@ async function main(): Promise<void> {
     options: {
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
-      config: { type: "string", short: "c", default: "./config.json" },
+      config: { type: "string", short: "c", default: "./themes" },
       output: { type: "string", short: "o", default: "." },
       force: { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
@@ -357,7 +357,7 @@ Commands:
   preview [variant]           Interactively preview a palette's colors in the terminal
 
 Options:
-  -c, --config <path>   Config file path (default: ./config.json)
+  -c, --config <path>   Config file or directory path (default: ./themes)
   -o, --output <path>   Output directory (default: .)
       --dry-run         Preview a Herdr config update without writing
       --force           Follow and update a Herdr config symlink target

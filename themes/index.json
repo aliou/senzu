@@ -1,0 +1,16 @@
+{
+  "name": "Senzu",
+  "author": "aliou",
+  "variants": [
+    "senzu",
+    "senzu-mono",
+    "senzu-light",
+    "senzu-mono-light",
+    "senzu-muted",
+    "senzu-muted-light",
+    "senzu-hc",
+    "senzu-hc-light",
+    "senzu-warm",
+    "senzu-cold"
+  ]
+}

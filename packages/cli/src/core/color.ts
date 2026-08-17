@@ -2,8 +2,8 @@
  * Color helpers for sanitizing palette colors for targets that cannot consume
  * 8-digit hex (alpha) values.
  *
- * The canonical `config.json` is a Zed-format palette, where slots such as
- * `editor.active_line.background` legitimately store transparent colors like
+ * The canonical theme files store slots such as
+ * `editor.active_line.background` with transparent colors like
  * `#1c1c1cbf` (alpha = 0xbf). Most terminal/editor targets only accept
  * 6-digit `#rrggbb`, and Neovim's `nvim_set_hl` raises `E5113: Invalid
  * highlight color` for alpha hex. `opaque` composites an alpha color over a

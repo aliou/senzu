@@ -5,7 +5,7 @@ _default:
 
 # --- themes ------------------------------------------------------------------
 
-# Regenerate every target in share/ from config.json.
+# Regenerate every target in share/ from themes/.
 generate target="":
     pnpm generate {{ target }}
 
@@ -41,7 +41,7 @@ format:
 typecheck:
     pnpm typecheck
 
-# Fail if share/ is out of date with config.json and the generators.
+# Fail if share/ is out of date with themes/ and the generators.
 themes-current: generate
     git diff --exit-code -- share/
 
