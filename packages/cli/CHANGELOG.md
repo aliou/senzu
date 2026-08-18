@@ -1,5 +1,11 @@
 # @senzu/cli
 
+## 0.11.0
+
+### Minor Changes
+
+- 0720900: Add light counterparts for the warm and cold Senzu variants.
+
 ## 0.9.0
 
 ### Minor Changes
