@@ -77,7 +77,7 @@
       # the release commit, while the binaries only exist once the build job
       # has uploaded them; pinning them separately keeps every commit pointing
       # at a release that actually has assets.
-      appearanceVersion = "0.10.0"; # appearance-version
+      appearanceVersion = "0.11.0"; # appearance-version
 
       # What the hashes hold until a release has uploaded binaries. While they
       # are still placeholders the flake builds from source instead of
@@ -87,15 +87,15 @@
       appearanceBinaries = {
         "aarch64-darwin" = {
           suffix = "darwin-arm64";
-          hash = "sha256-fPMSPnmAKLIGyb3Ar2UJ9EAJROdj47gqth++g3fe3Ew="; # darwin
+          hash = "sha256-CYvRZt2C4GeSWg0On6AU8OxBdBIKajBWMtPqq8Wb0mQ="; # darwin
         };
         "aarch64-linux" = {
           suffix = "linux-arm64";
-          hash = "sha256-XKyBcXEaU8z4v5H/UVuP/S5bkdHWJwkfFVX6msnNY60="; # linux-arm64
+          hash = "sha256-RHcVZWe/+AyrntrIKA2w+BqEDcgySrsBJfjerEV6tSE="; # linux-arm64
         };
         "x86_64-linux" = {
           suffix = "linux-x64";
-          hash = "sha256-VV2nCHRpvBAiJ89JF6B62z5anpwC2x8Qwyd+MBxtWVc="; # linux-x64
+          hash = "sha256-co56FqsjkZAoAPJOhp/z9oBWRWTwUMOt3/t05FL7u74="; # linux-x64
         };
       };
     in
