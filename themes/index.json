@@ -11,6 +11,8 @@
     "senzu-hc",
     "senzu-hc-light",
     "senzu-warm",
-    "senzu-cold"
+    "senzu-warm-light",
+    "senzu-cold",
+    "senzu-cold-light"
   ]
 }

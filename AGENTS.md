@@ -30,7 +30,7 @@
 
 - **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, herdr, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
-- **Variants**: 9 total — `senzu` (default dark), `senzu-mono`, `senzu-light`, `senzu-mono-light`, `senzu-muted`, `senzu-muted-light`, `senzu-hc`, `senzu-hc-light`, `senzu-warm`.
+- **Variants**: 12 total — `senzu` (default dark), `senzu-mono`, `senzu-light`, `senzu-mono-light`, `senzu-muted`, `senzu-muted-light`, `senzu-hc`, `senzu-hc-light`, `senzu-warm`, `senzu-warm-light`, `senzu-cold`, `senzu-cold-light`.
 
 - **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `herdr` (TOML config snippets plus safe config patching), `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
 

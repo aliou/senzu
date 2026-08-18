@@ -21,6 +21,8 @@ test("loadConfig loads theme families in manifest order", () => {
     "senzu-hc",
     "senzu-hc-light",
     "senzu-warm",
+    "senzu-warm-light",
     "senzu-cold",
+    "senzu-cold-light",
   ]);
 });

@@ -19,7 +19,9 @@ let
     "senzu-hc"
     "senzu-hc-light"
     "senzu-warm"
+    "senzu-warm-light"
     "senzu-cold"
+    "senzu-cold-light"
   ];
 
   # Automatically derive the themes package from the flake input.

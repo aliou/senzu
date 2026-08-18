@@ -90,9 +90,23 @@ Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown 
 </details>
 
 <details>
+<summary>Senzu Warm Light</summary>
+
+![Senzu Warm Light theme preview](.github/assets/previews/senzu-warm-light.svg)
+
+</details>
+
+<details>
 <summary>Senzu Cold</summary>
 
 ![Senzu Cold theme preview](.github/assets/previews/senzu-cold.svg)
+
+</details>
+
+<details>
+<summary>Senzu Cold Light</summary>
+
+![Senzu Cold Light theme preview](.github/assets/previews/senzu-cold-light.svg)
 
 </details>
 
