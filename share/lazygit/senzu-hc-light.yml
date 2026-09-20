@@ -13,5 +13,5 @@ gui:
     cherryPickedCommitBgColor: ["#4a2090"]
     markedBaseCommitFgColor: ["#fafafa"]
     markedBaseCommitBgColor: ["#7a5000"]
-    unstagedChangesColor: ["#cf6a4c"]
+    unstagedChangesColor: ["#c00000"]
     defaultFgColor: ["#000000"]
