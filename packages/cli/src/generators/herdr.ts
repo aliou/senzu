@@ -27,6 +27,11 @@ function customColors(palette: Palette): Record<string, string> {
   return {
     accent: palette.ui["panel.focused_border"] ?? palette.cursor,
     panel_bg: palette.ui["panel.background"] ?? palette.background,
+    // sidebar_bg is intentionally unset: every Herdr base theme (including
+    // "terminal") defaults it to Reset, which already matches the terminal
+    // background senzu itself is installed as.
+    active_row_bg: elevatedSurface(palette),
+    selection_bg: palette.selection_background,
     surface0:
       palette.colors.grey_three ??
       palette.ui["element.background"] ??
@@ -67,10 +72,15 @@ export function buildHerdrTheme(
   }
 
   return {
-    name: "catppuccin",
+    // "terminal" maps every Herdr token to an ANSI slot instead of a fixed
+    // Catppuccin RGB palette. Senzu overrides every token below anyway, so
+    // this only matters as the fallback for any future Herdr custom field
+    // senzu doesn't cover yet, "terminal" degrades to the live terminal's
+    // (senzu's own) colors instead of an unrelated Catppuccin blue.
+    name: "terminal",
     auto_switch: true,
-    dark_name: "catppuccin",
-    light_name: "catppuccin-latte",
+    dark_name: "terminal",
+    light_name: "terminal",
     shared,
     dark: darkOnly,
     light: lightOnly,

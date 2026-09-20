@@ -5,14 +5,16 @@
 # [theme] and [theme.custom]* tables, then run: herdr server reload-config
 
 [theme]
-name = "catppuccin"
+name = "terminal"
 auto_switch = true
-dark_name = "catppuccin"
-light_name = "catppuccin-latte"
+dark_name = "terminal"
+light_name = "terminal"
 
 [theme.custom.dark]
 accent = "#8fbfdc"
 panel_bg = "#151515"
+active_row_bg = "#1c1c1c"
+selection_bg = "#404040"
 surface0 = "#333333"
 surface1 = "#404040"
 surface_dim = "#1c1c1c"
@@ -31,6 +33,8 @@ peach = "#d98870"
 [theme.custom.light]
 accent = "#2B5B77"
 panel_bg = "#f5e6d3"
+active_row_bg = "#e8d5c0"
+selection_bg = "#d7af87"
 surface0 = "#d8c8b8"
 surface1 = "#d7af87"
 surface_dim = "#e8d5c0"
