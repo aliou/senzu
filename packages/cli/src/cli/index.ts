@@ -263,17 +263,33 @@ function installHerdr(variant: string | undefined, options: Options): void {
 
   const configPath = resolve(options.config);
   const config = loadConfig(configPath);
-  const palette = getPalettes(config).find(
-    (candidate) =>
-      candidate.name.toLowerCase().replace(/\s+/g, "-") === variant,
+  const palettes = getPalettes(config);
+  const paletteKey = (name: string) => name.toLowerCase().replace(/\s+/g, "-");
+  const palette = palettes.find(
+    (candidate) => paletteKey(candidate.name) === variant,
   );
   if (!palette) {
     throw new Error(`No variant found matching: ${variant}`);
   }
 
+  // senzu and senzu-light are the dark/light halves of one family; install
+  // both so auto_switch flips colors with the terminal appearance.
+  const darkKey = variant.replace(/-light$/, "");
+  const darkPalette = palettes.find(
+    (candidate) => paletteKey(candidate.name) === darkKey,
+  );
+  const lightPalette = palettes.find(
+    (candidate) => paletteKey(candidate.name) === `${darkKey}-light`,
+  );
+  if (!darkPalette || !lightPalette) {
+    throw new Error(
+      `No light/dark counterpart for "${variant}" (expected both "${darkKey}" and "${darkKey}-light" in themes/index.json)`,
+    );
+  }
+
   const result = installHerdrTheme({
     configPath: resolveHerdrConfigPath(),
-    theme: buildHerdrTheme(palette),
+    theme: buildHerdrTheme(darkPalette, lightPalette),
     force: options.force,
     dryRun: options.dryRun,
   });

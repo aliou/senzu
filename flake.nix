@@ -44,6 +44,10 @@
 
       systemIndependent = {
         lib = {
+          # Parsed `[theme]` tables per variant. Dark variant files pair the
+          # variant with its `-light` counterpart and enable auto_switch, so
+          # the attrset carries theme.custom.{shared,dark,light} colors.
+          # Light variant files are single-appearance.
           inherit herdrThemes;
           herdrTheme = variant:
             herdrThemes.${variant} or (throw ''

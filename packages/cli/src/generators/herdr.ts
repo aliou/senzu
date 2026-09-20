@@ -1,16 +1,21 @@
-import type { Palette } from "../core/types";
+import type { OutputFile, Palette } from "../core/types";
 import { elevatedSurface, textMuted } from "../core/ui";
 import { PerPaletteGenerator } from "./base";
 
 export interface HerdrThemeConfig {
   name: string;
   auto_switch: boolean;
-  custom: Record<string, string>;
+  dark_name: string;
+  light_name: string;
+  /** Colors applied in both appearances, on top of the built-in base themes. */
+  shared: Record<string, string>;
+  /** `[theme.custom.dark]` overrides, from the dark Senzu palette. */
+  dark: Record<string, string>;
+  /** `[theme.custom.light]` overrides, from the light Senzu palette. */
+  light: Record<string, string>;
 }
 
-export function buildHerdrTheme(palette: Palette): HerdrThemeConfig {
-  const baseTheme =
-    palette.appearance === "light" ? "catppuccin-latte" : "catppuccin";
+function customColors(palette: Palette): Record<string, string> {
   const muted = palette.colors.scorpion ?? textMuted(palette);
   const overlay = palette.colors.grey ?? textMuted(palette);
 
@@ -20,30 +25,63 @@ export function buildHerdrTheme(palette: Palette): HerdrThemeConfig {
   const overlay1 = palette.appearance === "light" ? muted : overlay;
 
   return {
-    name: baseTheme,
-    auto_switch: false,
-    custom: {
-      accent: palette.ui["panel.focused_border"] ?? palette.cursor,
-      panel_bg: palette.ui["panel.background"] ?? palette.background,
-      surface0:
-        palette.colors.grey_three ??
-        palette.ui["element.background"] ??
-        elevatedSurface(palette),
-      surface1: palette.selection_background,
-      surface_dim: elevatedSurface(palette),
-      overlay0,
-      overlay1,
-      text: palette.foreground,
-      subtext0: palette.colors.grey_chateau ?? textMuted(palette),
-      mauve: palette.ansi.magenta,
-      green: palette.ansi.green,
-      yellow: palette.ansi.yellow,
-      red: palette.ansi.red,
-      blue: palette.ansi.blue,
-      teal: palette.ansi.cyan,
-      peach: palette.colors.raw_sienna ?? palette.semantic.warning,
-    },
+    accent: palette.ui["panel.focused_border"] ?? palette.cursor,
+    panel_bg: palette.ui["panel.background"] ?? palette.background,
+    surface0:
+      palette.colors.grey_three ??
+      palette.ui["element.background"] ??
+      elevatedSurface(palette),
+    surface1: palette.selection_background,
+    surface_dim: elevatedSurface(palette),
+    overlay0,
+    overlay1,
+    text: palette.foreground,
+    subtext0: palette.colors.grey_chateau ?? textMuted(palette),
+    mauve: palette.ansi.magenta,
+    green: palette.ansi.green,
+    yellow: palette.ansi.yellow,
+    red: palette.ansi.red,
+    blue: palette.ansi.blue,
+    teal: palette.ansi.cyan,
+    peach: palette.colors.raw_sienna ?? palette.semantic.warning,
   };
+}
+
+export function buildHerdrTheme(
+  dark: Palette,
+  light: Palette,
+): HerdrThemeConfig {
+  const darkColors = customColors(dark);
+  const lightColors = customColors(light);
+
+  const shared: Record<string, string> = {};
+  const darkOnly: Record<string, string> = {};
+  const lightOnly: Record<string, string> = {};
+  for (const key of Object.keys(darkColors)) {
+    if (darkColors[key] === lightColors[key]) {
+      shared[key] = darkColors[key] as string;
+    } else {
+      darkOnly[key] = darkColors[key] as string;
+      lightOnly[key] = lightColors[key] as string;
+    }
+  }
+
+  return {
+    name: "catppuccin",
+    auto_switch: true,
+    dark_name: "catppuccin",
+    light_name: "catppuccin-latte",
+    shared,
+    dark: darkOnly,
+    light: lightOnly,
+  };
+}
+
+function tomlTable(header: string, colors: Record<string, string>): string {
+  const lines = Object.entries(colors).map(
+    ([name, color]) => `${name} = "${color}"`,
+  );
+  return `${header}\n${lines.join("\n")}\n`;
 }
 
 export class HerdrGenerator extends PerPaletteGenerator {
@@ -52,26 +90,60 @@ export class HerdrGenerator extends PerPaletteGenerator {
   fileExtension = ".toml";
 
   generate(palette: Palette): string {
-    const theme = buildHerdrTheme(palette);
-    const customColors = Object.entries(theme.custom)
-      .map(([name, color]) => `${name} = "${color}"`)
-      .join("\n");
+    return this.render(buildHerdrTheme(palette, palette), palette.name);
+  }
 
-    return `# Senzu Theme for Herdr: ${palette.name}
+  emit(palettes: Palette[]): OutputFile[] {
+    const byKey = new Map(
+      palettes.map((palette) => [this.paletteKey(palette), palette]),
+    );
+
+    return palettes.map((palette) => {
+      // senzu and senzu-light are the dark/light halves of one family; pair
+      // them regardless of which half this file belongs to.
+      const key = this.paletteKey(palette);
+      const darkKey = key.replace(/-light$/, "");
+      const dark = byKey.get(darkKey);
+      const light = byKey.get(`${darkKey}-light`);
+      if (!dark || !light) {
+        throw new Error(
+          `No light/dark counterpart for "${palette.name}" (expected both "${darkKey}" and "${darkKey}-light" in themes/index.json)`,
+        );
+      }
+
+      return {
+        relativePath: `share/${this.name}/${key}${this.fileExtension}`,
+        contents: this.render(buildHerdrTheme(dark, light), palette.name),
+      };
+    });
+  }
+
+  private render(theme: HerdrThemeConfig, description: string): string {
+    // Herdr uses the mode subtable for every token once it exists, so an
+    // empty mode table would blank the shared colors. Omit it instead.
+    const sections: string[] = [];
+    if (Object.keys(theme.shared).length > 0) {
+      sections.push(tomlTable("[theme.custom]", theme.shared));
+    }
+    if (Object.keys(theme.dark).length > 0) {
+      sections.push(tomlTable("[theme.custom.dark]", theme.dark));
+    }
+    if (Object.keys(theme.light).length > 0) {
+      sections.push(tomlTable("[theme.custom.light]", theme.light));
+    }
+
+    return `# Senzu Theme for Herdr: ${description}
 # Generated by senzu
 #
 # Merge these tables into ~/.config/herdr/config.toml, replacing any existing
-# [theme] and [theme.custom] tables, then run: herdr server reload-config
-#
-# Herdr uses one shared set of custom colors, so custom light and dark palettes
-# cannot switch automatically. Copy one Senzu variant at a time.
+# [theme] and [theme.custom]* tables, then run: herdr server reload-config
 
 [theme]
 name = "${theme.name}"
 auto_switch = ${theme.auto_switch}
+dark_name = "${theme.dark_name}"
+light_name = "${theme.light_name}"
 
-[theme.custom]
-${customColors}
-`;
+${sections.join("\n")}`;
   }
 }

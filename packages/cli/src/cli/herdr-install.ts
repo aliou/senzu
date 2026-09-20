@@ -76,7 +76,13 @@ export function mergeHerdrConfig(
       ...(currentTheme ?? {}),
       name: theme.name,
       auto_switch: theme.auto_switch,
-      custom: { ...theme.custom },
+      dark_name: theme.dark_name,
+      light_name: theme.light_name,
+      custom: {
+        ...theme.shared,
+        dark: { ...theme.dark },
+        light: { ...theme.light },
+      },
     },
   };
 
@@ -98,24 +104,46 @@ export function mergeHerdrConfig(
   if (!isTomlObject(verifiedTheme)) {
     throw new Error(`Generated invalid Herdr theme for ${path}`);
   }
+  const expectedCustom: TomlObject = {
+    ...theme.shared,
+    dark: theme.dark,
+    light: theme.light,
+  };
   if (
     verifiedTheme.name !== theme.name ||
     verifiedTheme.auto_switch !== theme.auto_switch ||
+    verifiedTheme.dark_name !== theme.dark_name ||
+    verifiedTheme.light_name !== theme.light_name ||
     !isTomlObject(verifiedTheme.custom)
   ) {
     throw new Error(`Generated Herdr theme failed validation for ${path}`);
   }
   if (
     Object.keys(verifiedTheme.custom).length !==
-    Object.keys(theme.custom).length
+    Object.keys(expectedCustom).length
   ) {
     throw new Error(
       `Generated Herdr custom colors failed validation for ${path}`,
     );
   }
-  for (const [name, color] of Object.entries(theme.custom)) {
+  for (const [name, color] of Object.entries(theme.shared)) {
     if (verifiedTheme.custom[name] !== color) {
       throw new Error(`Generated Herdr color ${name} failed validation`);
+    }
+  }
+  for (const mode of ["dark", "light"] as const) {
+    const verifiedMode = verifiedTheme.custom[mode];
+    if (!isTomlObject(verifiedMode)) {
+      throw new Error(
+        `Generated Herdr ${mode} overrides failed validation for ${path}`,
+      );
+    }
+    for (const [name, color] of Object.entries(theme[mode])) {
+      if (verifiedMode[name] !== color) {
+        throw new Error(
+          `Generated Herdr ${mode} color ${name} failed validation`,
+        );
+      }
     }
   }
 
@@ -254,7 +282,8 @@ export function installHerdrTheme(
   ) {
     throw new Error(
       `Cannot update Nix store path ${effectivePath}. ` +
-        'Use inputs.senzu.lib.herdrTheme "<variant>" in your Nix config.',
+        'Use inputs.senzu.lib.herdrTheme "<variant>" in your Nix config ' +
+        "(dark variants include their light counterpart and enable auto_switch).",
     );
   }
 

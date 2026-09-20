@@ -17,11 +17,18 @@ import { installHerdrTheme, mergeHerdrConfig } from "./herdr-install";
 
 const theme: HerdrThemeConfig = {
   name: "catppuccin",
-  auto_switch: false,
-  custom: {
+  auto_switch: true,
+  dark_name: "catppuccin",
+  light_name: "catppuccin-latte",
+  shared: {
     accent: "#8fbfdc",
-    text: "#e8e8d3",
     red: "#d74545",
+  },
+  dark: {
+    text: "#e8e8d3",
+  },
+  light: {
+    text: "#202020",
   },
 };
 
@@ -55,8 +62,32 @@ sidebar_width = 42
   assert.equal(parsed.onboarding, false);
   assert.equal(parsed.ui.sidebar_width, 42);
   assert.equal(parsed.theme.future_option, "preserved");
-  assert.deepEqual({ ...parsed.theme.custom }, theme.custom);
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed.theme.custom)), {
+    ...theme.shared,
+    dark: theme.dark,
+    light: theme.light,
+  });
   assert.doesNotMatch(output, /stale_color/);
+});
+
+test("mergeHerdrConfig replaces old single-appearance theme tables", () => {
+  const source = `[theme]
+name = "catppuccin"
+auto_switch = false
+
+[theme.custom]
+accent = "#ffffff"
+text = "#000000"
+`;
+
+  const output = mergeHerdrConfig(source, "config.toml", theme);
+  const parsed = parse(output, { integersAsBigInt: false });
+
+  assert.equal(parsed.theme.auto_switch, true);
+  assert.equal(parsed.theme.custom.accent, theme.shared.accent);
+  assert.equal(parsed.theme.custom.text, undefined);
+  assert.deepEqual({ ...parsed.theme.custom.dark }, { ...theme.dark });
+  assert.deepEqual({ ...parsed.theme.custom.light }, { ...theme.light });
 });
 
 test("installHerdrTheme creates a timestamped backup and is idempotent", () => {
