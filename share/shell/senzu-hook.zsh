@@ -24,6 +24,15 @@
 
 [[ -o interactive ]] || return 0
 
+# Herdr seeds new panes with the server's environment, which can carry a
+# SENZU_APPEARANCE that some other shell exported long ago. Inside Herdr such
+# a value is inherited state, not a choice made for this shell: drop it and
+# probe. Outside Herdr the documented contract holds -- a pre-set value is a
+# manual override and pins the variant until the user unsets it.
+if [[ "${HERDR_ENV:-}" = 1 ]]; then
+  unset SENZU_APPEARANCE
+fi
+
 typeset -g SENZU_DARK_VARIANT="${1:-${SENZU_DARK_VARIANT:-senzu}}"
 typeset -g SENZU_LIGHT_VARIANT="${2:-${SENZU_LIGHT_VARIANT:-senzu-light}}"
 # Probe at most this often. The probe costs a few ms; between refreshes the
