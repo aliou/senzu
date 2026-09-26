@@ -20,6 +20,7 @@
     "greyChateau": "#5c5148",
     "brightGrey": "#efe5dc",
     "shuttleGrey": "#a09080",
+    "mineShaft": "#ecd8bc",
     "temptress": "#ffe5dd",
     "bayouxBlue": "#6a563a",
     "totalWhite": "#120d08",
@@ -72,7 +73,7 @@
     "customMessageBg": "gravel",
     "customMessageText": "foreground",
     "customMessageLabel": "greenSmoke",
-    "toolPendingBg": "#1f1f1f",
+    "toolPendingBg": "mineShaft",
     "toolSuccessBg": "gravel",
     "toolErrorBg": "temptress",
     "toolTitle": "morningGlory",
@@ -111,6 +112,6 @@
   "export": {
     "pageBg": "background",
     "cardBg": "greyOne",
-    "infoBg": "#1f1f1f"
+    "infoBg": "mineShaft"
   }
 }
