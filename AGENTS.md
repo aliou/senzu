@@ -11,7 +11,7 @@
 - **Lint/Format**: `pnpm lint` (check) or `pnpm format` (apply fixes). Uses Biome with `@aliou/biome-plugins`.
 - **Typecheck**: `pnpm typecheck` (`tsc --noEmit`)
 - **Changeset**: `pnpm changeset`
-- **Appearance probe**: `just test-native` (58 tests), `just build-native`, `just clippy`
+- **Appearance probe**: `just test-native` (64 tests), `just build-native`, `just clippy`
 - **Dev shell**: `nix develop` or `use flake` (direnv) — Node.js 24, pnpm, just, and the Rust toolchain
 
 ## Architecture

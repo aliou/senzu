@@ -104,19 +104,37 @@ impl Drop for TerminalLock {
 
 /// Everything between disabling echo and restoring it.
 fn query_background(fd: i32, timeout: Duration) -> Option<Appearance> {
+    let vtime = timeout.as_millis().div_ceil(100).clamp(1, 255) as u8;
+    let _quiet = QuietMode::enter(fd, vtime)?;
+
     // Typeahead already waiting: a probe would read the user's keystrokes and
-    // drop them. Skip and let the caller fall back to the cache.
-    let mut pending: libc::c_int = 0;
-    if unsafe { libc::ioctl(fd, libc::FIONREAD, &mut pending) } == 0 && pending > 0 {
+    // drop them. Skip and let the caller fall back to the cache. Check after
+    // leaving canonical mode, not before: canonical mode only counts finished
+    // lines, so a half-typed command reads as zero. Restoring ICANON puts
+    // those bytes back in the line untouched.
+    if pending_input(fd) {
         return None;
     }
 
     let query = osc::build_query(std::env::var_os("TMUX").is_some());
-    let vtime = timeout.as_millis().div_ceil(100).clamp(1, 255) as u8;
-    let _quiet = QuietMode::enter(fd, vtime)?;
-
     write_all(fd, &query)?;
 
+    let input = read_reply(fd, timeout);
+    // Keys pressed while the query was in flight were read along with the
+    // reply. Hand them back before the terminal is restored.
+    push_back(fd, &osc::strip_reply(&input));
+    osc::parse_background(&input).map(osc::appearance_from_rgb)
+}
+
+fn pending_input(fd: i32) -> bool {
+    let mut pending: libc::c_int = 0;
+    let status = unsafe { libc::ioctl(fd, libc::FIONREAD, &mut pending) };
+    status == 0 && pending > 0
+}
+
+/// Reads until the reply is terminated, the buffer is full, or the deadline
+/// passes. Returns everything read, keystrokes included.
+fn read_reply(fd: i32, timeout: Duration) -> Vec<u8> {
     let deadline = Instant::now() + timeout;
     let mut buf = [0u8; READ_BUF];
     let mut used = 0;
@@ -142,8 +160,19 @@ fn query_background(fd: i32, timeout: Duration) -> Option<Appearance> {
             break;
         }
     }
+    buf[..used].to_vec()
+}
 
-    osc::parse_background(&buf[..used]).map(osc::appearance_from_rgb)
+/// Queues `bytes` as terminal input again, as if typed. Echo is still off, as
+/// it was when they were typed. Linux 6.2+ can disable TIOCSTI
+/// (`dev.tty.legacy_tiocsti=0`); there the first failure stops and the keys
+/// are lost.
+fn push_back(fd: i32, bytes: &[u8]) {
+    for byte in bytes {
+        if unsafe { libc::ioctl(fd, libc::TIOCSTI, byte as *const u8) } != 0 {
+            return;
+        }
+    }
 }
 
 fn write_all(fd: i32, buf: &[u8]) -> Option<()> {

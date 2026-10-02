@@ -6,6 +6,7 @@
 use crate::appearance::Appearance;
 
 const QUERY: &[u8] = b"\x1b]11;?\x1b\\";
+const REPLY_START: &[u8] = b"\x1b]11;";
 
 /// Builds the OSC 11 query. Inside tmux the sequence is wrapped in a
 /// passthrough (`DCS tmux; ... ST`) with every ESC doubled, so the outer
@@ -30,9 +31,41 @@ pub fn build_query(in_tmux: bool) -> Vec<u8> {
 
 /// True once the buffer holds a terminated reply (ST or BEL). Reading stops
 /// there so the reply is consumed and nothing more: typeahead that arrives
-/// after it stays in the terminal's buffer.
+/// after it stays in the terminal's buffer. A BEL or ST typed before the reply
+/// does not count.
 pub fn reply_complete(buf: &[u8]) -> bool {
-    buf.contains(&0x07) || buf.windows(2).any(|pair| pair == b"\x1b\\")
+    matches!(reply_span(buf), Some((_, Some(_))))
+}
+
+/// The bytes in `buf` that are not the reply: keys the user pressed while the
+/// query was in flight. An unterminated reply runs to the end of the buffer.
+pub fn strip_reply(buf: &[u8]) -> Vec<u8> {
+    let Some((start, end)) = reply_span(buf) else {
+        return buf.to_vec();
+    };
+    let end = end.unwrap_or(buf.len());
+    [&buf[..start], &buf[end..]].concat()
+}
+
+/// Where the reply sits in `buf`: its start, and the index just past its
+/// terminator once that has arrived.
+fn reply_span(buf: &[u8]) -> Option<(usize, Option<usize>)> {
+    let start = buf
+        .windows(REPLY_START.len())
+        .position(|window| window == REPLY_START)?;
+    let body = start + REPLY_START.len();
+    let end = terminator_end(&buf[body..]).map(|offset| body + offset);
+    Some((start, end))
+}
+
+/// Index just past the first ST or BEL, whichever comes first.
+fn terminator_end(rest: &[u8]) -> Option<usize> {
+    let bel = rest.iter().position(|&byte| byte == 0x07).map(|i| i + 1);
+    let st = rest
+        .windows(2)
+        .position(|pair| pair == b"\x1b\\")
+        .map(|i| i + 2);
+    [bel, st].into_iter().flatten().min()
 }
 
 /// Parses `...]11;rgb:RR/GG/BB...` (1-4 hex digits per component, `rgba:` too)
@@ -119,6 +152,32 @@ mod tests {
         assert!(!reply_complete(b"\x1b]11;rgb:00/00/00"));
         assert!(reply_complete(b"\x1b]11;rgb:00/00/00\x1b\\"));
         assert!(reply_complete(b"\x1b]11;rgb:00/00/00\x07"));
+    }
+
+    #[test]
+    fn a_terminator_typed_before_the_reply_does_not_end_it() {
+        assert!(!reply_complete(b"\x07\x1b\\"));
+        assert!(!reply_complete(b"\x07\x1b]11;rgb:00/00/00"));
+    }
+
+    #[test]
+    fn strips_the_reply_and_keeps_the_keys_around_it() {
+        assert_eq!(
+            strip_reply(b"git\x1b]11;rgb:1515/1515/1515\x1b\\ st"),
+            b"git st".to_vec()
+        );
+        assert_eq!(strip_reply(b"\x1b]11;rgb:15/15/15\x07ls"), b"ls".to_vec());
+    }
+
+    #[test]
+    fn keeps_everything_when_no_reply_arrived() {
+        assert_eq!(strip_reply(b"git st"), b"git st".to_vec());
+        assert_eq!(strip_reply(b""), Vec::<u8>::new());
+    }
+
+    #[test]
+    fn drops_an_unterminated_reply() {
+        assert_eq!(strip_reply(b"ls\x1b]11;rgb:15/1"), b"ls".to_vec());
     }
 
     #[test]

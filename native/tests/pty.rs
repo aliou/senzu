@@ -6,6 +6,7 @@
 //!   - the terminal's reply is never echoed back onto the screen
 //!   - the terminal is left exactly as it was found
 //!   - a probe is skipped when the user has typed ahead
+//!   - keys typed before or during a probe are still there afterwards
 //!
 //! A fake terminal on the master side answers OSC 11, so no assumption is made
 //! about the terminal `cargo test` happens to run under.
@@ -41,10 +42,20 @@ impl Session {
         find(tail, b"rgb:").is_some()
     }
 
-    /// The last visible line: what the binary printed. Escape sequences are
-    /// stripped because the query the child wrote lands in the same stream,
-    /// and earlier lines can hold echoed typeahead.
+    /// What the binary printed.
     fn printed(&self) -> String {
+        self.field("answer:")
+    }
+
+    /// Input still waiting once the binary exited: typeahead it left alone.
+    fn left(&self) -> String {
+        self.field("left:")
+    }
+
+    /// The rest of the visible line that starts with `label`. Escape sequences
+    /// are stripped because the query the child wrote lands in the same
+    /// stream, and other lines can hold echoed typeahead.
+    fn field(&self, label: &str) -> String {
         let mut visible = Vec::new();
         let mut bytes = self.output.iter().copied().peekable();
         while let Some(byte) = bytes.next() {
@@ -66,7 +77,7 @@ impl Session {
         String::from_utf8_lossy(&visible)
             .replace("\r\n", "\n")
             .lines()
-            .last()
+            .find_map(|line| line.strip_prefix(label))
             .unwrap_or_default()
             .trim()
             .to_string()
@@ -79,29 +90,34 @@ fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
         .position(|window| window == needle)
 }
 
-/// Runs the binary on a pty. `reply` is written once the query is seen;
-/// `typeahead` is written before the child starts.
+/// Runs the binary on a pty. `reply` is written once the query is seen and
+/// may carry keys typed around the terminal's answer; `typeahead` is written
+/// before the binary starts.
+///
+/// A shell prints the binary's answer after `answer:`, then turns off
+/// canonical mode and echo and prints whatever input is left after `left:`,
+/// half-typed lines included. Echo goes off too: BSD ttys re-echo pending
+/// input on a mode switch.
 fn run_on_pty(args: &[&str], reply: Option<&[u8]>, typeahead: Option<&[u8]>) -> Session {
     // Everything the child needs is built before the fork: after forkpty the
     // child may only call async-signal-safe functions, and `cargo test` is
     // multithreaded, so allocating there can deadlock.
-    // With typeahead, the child must not start before the bytes are in the
-    // terminal's input queue, or the test races the FIONREAD guard. A shell
-    // that sleeps first makes the ordering deterministic.
-    let (program, argv_owned) = if typeahead.is_some() {
-        let command = format!("sleep 0.2; exec {BIN} {}", args.join(" "));
-        (
-            CString::new("/bin/sh").unwrap(),
-            ["/bin/sh", "-c", &command]
-                .map(|arg| CString::new(arg).unwrap())
-                .to_vec(),
-        )
+    // With typeahead, the binary must not start before the bytes are in the
+    // terminal's input queue, or the test races the FIONREAD guard. Sleeping
+    // first makes the ordering deterministic. The newline after it keeps the
+    // echoed typeahead off the `answer:` line.
+    let sleep = if typeahead.is_some() {
+        "sleep 0.2; "
     } else {
-        let program = CString::new(BIN).unwrap();
-        let mut argv_owned = vec![program.clone()];
-        argv_owned.extend(args.iter().map(|arg| CString::new(*arg).unwrap()));
-        (program, argv_owned)
+        ""
     };
+    let command = format!(
+        "{sleep}echo; printf 'answer:'; {BIN} {}; status=$?; \
+         stty -icanon -echo min 0 time 2; printf 'left:'; cat; echo; exit $status",
+        args.join(" ")
+    );
+    let program = CString::new("/bin/sh").unwrap();
+    let argv_owned = ["/bin/sh", "-c", &command].map(|arg| CString::new(arg).unwrap());
     let mut argv: Vec<*const libc::c_char> = argv_owned.iter().map(|arg| arg.as_ptr()).collect();
     argv.push(std::ptr::null());
 
@@ -115,6 +131,11 @@ fn run_on_pty(args: &[&str], reply: Option<&[u8]>, typeahead: Option<&[u8]>) -> 
     let env_owned = [
         CString::new(format!("SENZU_APPEARANCE_CACHE={}", cache.display())).unwrap(),
         CString::new("TERM=xterm-256color").unwrap(),
+        CString::new(format!(
+            "PATH={}",
+            std::env::var("PATH").unwrap_or_default()
+        ))
+        .unwrap(),
     ];
     let mut envp: Vec<*const libc::c_char> = env_owned.iter().map(|entry| entry.as_ptr()).collect();
     envp.push(std::ptr::null());
@@ -293,23 +314,76 @@ fn falls_back_when_the_terminal_stays_silent() {
 
 #[test]
 fn skips_the_probe_when_the_user_typed_ahead() {
+    // Without Enter is the case that matters: a shell still starting up has
+    // the terminal in canonical mode, where a half-typed line is invisible to
+    // FIONREAD until the probe leaves that mode.
+    for typed in [&b"git st"[..], &b"git status\n"[..]] {
+        let session = run_on_pty(
+            &[
+                "--no-cache",
+                "--no-os",
+                "--timeout",
+                "2000",
+                "--default",
+                "light",
+            ],
+            Some(DARK_REPLY),
+            Some(typed),
+        );
+        assert!(
+            !session.saw_query(),
+            "probing would have eaten the keystrokes {typed:?}"
+        );
+        assert_eq!(session.printed(), "light");
+        assert_eq!(
+            session.left(),
+            String::from_utf8_lossy(typed).trim(),
+            "typeahead must still be waiting"
+        );
+    }
+}
+
+/// Linux 6.2+ can disable TIOCSTI, and then keys typed mid-probe are lost.
+fn tiocsti_disabled() -> bool {
+    std::fs::read_to_string("/proc/sys/dev/tty/legacy_tiocsti")
+        .is_ok_and(|value| value.trim() == "0")
+}
+
+#[test]
+fn hands_back_keys_typed_while_the_reply_is_in_flight() {
+    if tiocsti_disabled() {
+        eprintln!("skipped: TIOCSTI is disabled on this kernel");
+        return;
+    }
+    let typed_around_reply = [&b"git"[..], DARK_REPLY, &b" st"[..]].concat();
+    let session = run_on_pty(&PATIENT, Some(&typed_around_reply), None);
+    assert!(session.saw_query());
+    assert_eq!(session.printed(), "dark");
+    assert_eq!(session.left(), "git st");
+    assert!(!session.echoed_reply());
+}
+
+#[test]
+fn hands_back_keys_typed_while_the_terminal_stays_silent() {
+    if tiocsti_disabled() {
+        eprintln!("skipped: TIOCSTI is disabled on this kernel");
+        return;
+    }
     let session = run_on_pty(
         &[
             "--no-cache",
             "--no-os",
             "--timeout",
-            "2000",
+            "300",
             "--default",
-            "dark",
+            "light",
         ],
-        Some(DARK_REPLY),
-        Some(b"typed before the probe\n"),
+        Some(b"git st"),
+        None,
     );
-    assert!(
-        !session.saw_query(),
-        "probing would have eaten the keystrokes"
-    );
-    assert_eq!(session.printed(), "dark");
+    assert!(session.saw_query());
+    assert_eq!(session.printed(), "light");
+    assert_eq!(session.left(), "git st");
 }
 
 #[test]

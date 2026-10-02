@@ -60,11 +60,18 @@ environment the shell exports.
      probes on the same terminal serialize. Not on `/dev/tty`: that is one
      device node shared by every process, so locking it would make unrelated
      terminals wait on each other.
-   - Skip entirely if `FIONREAD` reports pending input: probing would eat the
-     user's keystrokes.
    - `ECHO` and `ICANON` off, `VMIN=0` `VTIME=1`. Not `VMIN=0`/`VTIME=0` with
      `poll()`: on macOS a never-blocking read makes `poll()` report `POLLIN`
      unconditionally, which turns the wait into a busy spin.
+   - Skip entirely if `FIONREAD` reports pending input: probing would eat the
+     user's keystrokes. The check runs after `ICANON` is off. In canonical
+     mode `FIONREAD` counts only finished lines, so a command typed into a
+     shell that is still starting reads as zero. Restoring `ICANON` puts
+     those bytes back in the line.
+   - Keys typed while the reply is in flight are read along with it. The
+     probe strips the reply and pushes the rest back with `TIOCSTI` before
+     restoring the terminal. Linux 6.2+ can disable `TIOCSTI`
+     (`dev.tty.legacy_tiocsti=0`); there those keys are lost.
    - Restore with `TCSANOW` (never `TCSAFLUSH`, which would discard typeahead),
      from a `Drop` guard or `atexit`, and from handlers for `SIGINT`,
      `SIGTERM`, `SIGHUP`, `SIGQUIT`, `SIGPIPE`.
@@ -112,8 +119,10 @@ locally when needed.
 
 ## Tests
 
-`just test-native` runs 58 tests. The ones that matter for the bugs above are
-in `native/rust/tests/pty.rs`: they fork a real terminal, answer OSC 11 from
+`just test-native` runs 64 tests. The ones that matter for the bugs above are
+in `native/tests/pty.rs`: they fork a real terminal, answer OSC 11 from
 the master side, and assert that the reply is never echoed, that `echo` and
 `icanon` come back exactly as they were, that a probe is skipped when the user
-has typed ahead, and that `--cached-only` never reaches the tty.
+has typed ahead (with or without Enter), that keys typed before or during a
+probe are still waiting afterwards, and that `--cached-only` never reaches the
+tty.
