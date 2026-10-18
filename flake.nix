@@ -281,11 +281,6 @@
             senzu-dev
             just
             jq
-            # Appearance probe toolchain.
-            cargo
-            rustc
-            clippy
-            rustfmt
           ];
         };
       }
