@@ -171,4 +171,3 @@ export function opaque(
 
   return toHex(blend(fr, br), blend(fg, bgg), blend(fb, bb));
 }
-
