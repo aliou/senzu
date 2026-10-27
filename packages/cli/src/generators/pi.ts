@@ -1,3 +1,4 @@
+import { rehue } from "../core/color";
 import type { Palette } from "../core/types";
 import { PerPaletteGenerator } from "./base";
 
@@ -36,6 +37,37 @@ function resolveColor(
     }
   }
   return targetHex;
+}
+
+//
+// Message and tool panels are the fastest-moving part of a scrolling session:
+// a user message and a successful tool call are both full-width background
+// blocks, so they are only tellable apart at a glance if they differ in HUE.
+// Neutral greys of similar lightness (`grey_three` vs `gravel`) read as "the
+// same box" while flick-scrolling, however far apart their hex values are.
+//
+// Each panel keeps the OKLCH lightness of the neutral slot it replaced, so its
+// text contrast and visual weight stay exactly as reviewed, and takes its hue
+// from a role color in the palette. toolSuccessBg takes the success hue, which
+// alone fixes the old grey-vs-grey confusion with the user panel — the user
+// panel keeps its original neutral grey. customMessageBg gets a violet so it
+// reads as neither. Tool error panels are left alone: they are already a
+// distinct dark red. Monochrome families grey out their ansi colors, so their
+// custom panel stays neutral too — separation there is lightness-only by design.
+const PANEL_CHROMA = {
+  dark: { user: 0, tool: 0.045, custom: 0.035 },
+  light: { user: 0, tool: 0.05, custom: 0.04 },
+} as const;
+
+function tintPanel(
+  palette: Palette,
+  base: string | undefined,
+  hue: string | undefined,
+  chroma: number,
+): string {
+  const fallback = palette.colors.grey_three ?? palette.background;
+  if (!hue) return base ?? fallback;
+  return rehue(base ?? fallback, hue, { chroma });
 }
 
 function solidScrollbarThumb(palette: Palette): string {
@@ -99,16 +131,28 @@ const SLOT_DEFS: Record<
     candidates: ["tundora", "greyThree", "brightGrey"],
   },
   userMessageBg: {
-    getSource: (p) => p.colors.grey_three ?? "#333333",
-    candidates: ["greyThree"],
+    getSource: (p) =>
+      tintPanel(
+        p,
+        p.colors.grey_three,
+        p.ansi.blue ?? p.colors.morning_glory,
+        PANEL_CHROMA[p.appearance].user,
+      ),
+    candidates: [],
   },
   userMessageText: {
     getSource: (p) => p.foreground,
     candidates: ["foreground"],
   },
   customMessageBg: {
-    getSource: (p) => p.colors.gravel ?? "#403c41",
-    candidates: ["gravel"],
+    getSource: (p) =>
+      tintPanel(
+        p,
+        p.colors.gravel,
+        p.ansi.magenta ?? p.colors.biloba_flower,
+        PANEL_CHROMA[p.appearance].custom,
+      ),
+    candidates: [],
   },
   customMessageText: {
     getSource: (p) => p.foreground,
@@ -124,8 +168,14 @@ const SLOT_DEFS: Record<
     candidates: ["mineShaft"],
   },
   toolSuccessBg: {
-    getSource: (p) => p.colors.gravel ?? "#403c41",
-    candidates: ["gravel"],
+    getSource: (p) =>
+      tintPanel(
+        p,
+        p.colors.gravel,
+        p.semantic.ok,
+        PANEL_CHROMA[p.appearance].tool,
+      ),
+    candidates: [],
   },
   toolErrorBg: {
     getSource: (p) => p.colors.temptress ?? "#40000a",
