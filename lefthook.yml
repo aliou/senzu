@@ -1,0 +1,21 @@
+# https://lefthook.dev/configuration.html
+# Mirrors the CI checks so broken commits never leave the machine.
+pre-commit:
+  commands:
+    biome-check:
+      glob: "*.{ts,json}"
+      run: npx biome check
+    typecheck:
+      glob: "*.ts"
+      run: npx tsc -p packages/cli --noEmit
+    themes-up-to-date:
+      glob: "config.json or packages/cli/src/{generators,core}/*.ts"
+      run: |
+        npx tsx packages/cli/src/cli/index.ts generate -o . > /dev/null
+        if ! git diff --exit-code -- share/; then
+          echo "share/ is out of date. Run: pnpm generate"
+          exit 1
+        fi
+    lockfile-up-to-date:
+      glob: "{package.json,pnpm-lock.yaml,pnpm-workspace.yaml}"
+      run: pnpm install --frozen-lockfile --ignore-scripts

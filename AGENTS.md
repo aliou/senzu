@@ -26,7 +26,7 @@
   - `share/` — generated output (committed, consumed by nix)
   - `native/` — `senzu-appearance`, the terminal appearance probe (Rust). See `docs/appearance-detection.md`
   - `nix/home-manager.nix` — Nix home-manager module for installing themes and the probe
-  - `flake.nix` — Nix flake: themes package, appearance probe, devshell with git-hooks
+  - `flake.nix` — Nix flake: themes package, appearance probe, devshell with lefthook
 
 - **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, herdr, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
@@ -38,7 +38,7 @@
 
 - **Appearance probe distribution**: the release workflow builds `senzu-appearance` for `aarch64-darwin`, `aarch64-linux` (static musl) and `x86_64-linux` (static musl), attaches them to the GitHub release, and rewrites `appearanceVersion` plus the three hashes in `flake.nix`. Those marker comments (`# appearance-version`, `# darwin`, `# linux-arm64`, `# linux-x64`) are load-bearing — do not reformat them. While the hashes are placeholders, `.#appearance` builds from source.
 
-- **Pre-commit hooks** (via git-hooks.nix): biome check, typecheck, themes-up-to-date (regenerates `share/` and fails if changed), lockfile-up-to-date (`pnpm install --frozen-lockfile` fails if drift).
+- **Pre-commit hooks** (via lefthook, `lefthook.yml`): biome check, typecheck, themes-up-to-date (regenerates `share/` and fails if changed), lockfile-up-to-date (`pnpm install --frozen-lockfile` fails if drift). Hooks are installed by the devshell's `shellHook` (or `lefthook install`).
 
 - **Hand-maintained `share/` files**: `share/` is almost entirely generator output, but `share/shell/senzu-appearance.sh` is a hand-maintained support script (appearance detection for bat/fzf dark/light switching). It is not produced by a generator; `pnpm generate` leaves it untouched. The themes package still ships it via `cp -r share/*`.
 

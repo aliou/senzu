@@ -4,10 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    git-hooks = {
-      url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -15,7 +11,6 @@
       self,
       nixpkgs,
       flake-utils,
-      git-hooks,
     }:
     let
       # Read version from the CLI package so the themes package and CLI stay in sync.
@@ -200,63 +195,8 @@
           exec "$tsx" "$entry" "$@"
         '';
 
-        pre-commit-check = git-hooks.lib.${system}.run {
-          src = ./.;
-          hooks = {
-            # Format and lint check.
-            biome-check = {
-              enable = true;
-              name = "biome check";
-              entry = "${pkgs.nodejs_24}/bin/npx biome check";
-              files = "\\.(ts|json)$";
-              pass_filenames = false;
-            };
-            # Typecheck.
-            typecheck = {
-              enable = true;
-              name = "typecheck";
-              entry = "${pkgs.nodejs_24}/bin/npx tsc -p packages/cli --noEmit";
-              files = "\\.ts$";
-              pass_filenames = false;
-            };
-            # Regenerate themes and fail if share/ would change (keeps generated output in sync).
-            themes-up-to-date = {
-              enable = true;
-              name = "themes up to date";
-              entry = ''
-                ${pkgs.bash}/bin/bash -c '
-                  set -e
-                  ${pkgs.nodejs_24}/bin/npx tsx packages/cli/src/cli/index.ts generate -o . > /dev/null
-                  if ! ${pkgs.git}/bin/git diff --exit-code -- share/; then
-                    echo "share/ is out of date. Run: pnpm generate"
-                    exit 1
-                  fi
-                '
-              '';
-              files = "(config\\.json|packages/cli/src/generators/.*\\.ts|packages/cli/src/core/.*\\.ts)";
-              pass_filenames = false;
-            };
-            # Fail if pnpm-lock.yaml is out of date.
-            lockfile-up-to-date = {
-              enable = true;
-              name = "pnpm-lock.yaml up to date";
-              entry = ''
-                ${pkgs.bash}/bin/bash -c '
-                  set -e
-                  ${pkgs.nodejs_24}/bin/npm exec -- pnpm install --frozen-lockfile --ignore-scripts
-                '
-              '';
-              files = "(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml)";
-              pass_filenames = false;
-            };
-          };
-        };
       in
       {
-        checks = {
-          pre-commit-check = pre-commit-check;
-        };
-
         packages = {
           default = themes;
           themes = themes;
@@ -274,12 +214,16 @@
         };
 
         devShells.default = pkgs.mkShell {
-          inherit (pre-commit-check) shellHook;
+          # Install the lefthook git hooks (lefthook.yml) on entry.
+          shellHook = ''
+            ${pkgs.lefthook}/bin/lefthook install
+          '';
           packages = with pkgs; [
             nodejs_24
             pnpm
             senzu-dev
             just
+            lefthook
             jq
           ];
         };
