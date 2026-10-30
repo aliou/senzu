@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu HC Light",
+  "colors": {
+    "background": "#fafafa",
+    "backgroundSecondary": "#f0f0f0",
+    "text": "#000000",
+    "selection": "#e8d0c0",
+    "loader": "#1a3a80",
+    "red": "#c00000",
+    "orange": "#8a4a00",
+    "yellow": "#7a5000",
+    "green": "#507020",
+    "blue": "#1a3a80",
+    "purple": "#4a2090",
+    "magenta": "#c00060"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "dark",
+  "name": "Senzu Mono",
+  "colors": {
+    "background": "#151515",
+    "backgroundSecondary": "#1c1c1c",
+    "text": "#e8e8d3",
+    "selection": "#404040",
+    "loader": "#7a8aa6",
+    "red": "#c95c5c",
+    "orange": "#ffaf00",
+    "yellow": "#ccc5c4",
+    "green": "#b39066",
+    "blue": "#7a8aa6",
+    "purple": "#c7c7c7",
+    "magenta": "#d56a9e"
+  }
+}

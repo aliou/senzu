@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Warm Light",
+  "colors": {
+    "background": "#fbead6",
+    "backgroundSecondary": "#eed9c2",
+    "text": "#2b241d",
+    "selection": "#d8b992",
+    "loader": "#2952a3",
+    "red": "#ff3333",
+    "orange": "#a66510",
+    "yellow": "#876820",
+    "green": "#386014",
+    "blue": "#2952a3",
+    "purple": "#6a4abd",
+    "magenta": "#a84a62"
+  }
+}

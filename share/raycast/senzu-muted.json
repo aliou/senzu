@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "dark",
+  "name": "Senzu Muted",
+  "colors": {
+    "background": "#101010",
+    "backgroundSecondary": "#1e1e1c",
+    "text": "#dad6c8",
+    "selection": "#3c3b38",
+    "loader": "#7a8aa6",
+    "red": "#cc4d4d",
+    "orange": "#d9a45a",
+    "yellow": "#e8c88c",
+    "green": "#909c6e",
+    "blue": "#7a8aa6",
+    "purple": "#b8aed3",
+    "magenta": "#c47090"
+  }
+}

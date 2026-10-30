@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Mono Light",
+  "colors": {
+    "background": "#f5f0e8",
+    "backgroundSecondary": "#e8e0d5",
+    "text": "#252525",
+    "selection": "#d8c8b8",
+    "loader": "#4a5e81",
+    "red": "#cc0000",
+    "orange": "#a36000",
+    "yellow": "#6a6564",
+    "green": "#7d7163",
+    "blue": "#4a5e81",
+    "purple": "#555555",
+    "magenta": "#9a2050"
+  }
+}

@@ -24,6 +24,17 @@ ad.programs.herdr.settings.theme = inputs.senzu.lib.herdrTheme "senzu-muted";
 
 All variants are also available under `inputs.senzu.lib.herdrThemes`.
 
+## Raycast
+
+Raycast stores custom themes in its internal storage and does not read theme
+files from disk, so `share/raycast/<variant>.json` must be imported by hand
+(Raycast Pro required):
+
+1. Run the `Show Theme Studio` command in Raycast.
+2. Right-click the theme list and add a new theme, then paste the contents of
+   the variant JSON into the Theme Studio editor (or use "Copy as JSON" on an
+   existing theme as a shape reference).
+
 ## Hunk
 
 Hunk reads themes from its TOML config rather than standalone files, so senzu

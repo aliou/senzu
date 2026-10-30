@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Muted Light",
+  "colors": {
+    "background": "#f7f3eb",
+    "backgroundSecondary": "#ebe7df",
+    "text": "#2d2c2a",
+    "selection": "#c9b99a",
+    "loader": "#445987",
+    "red": "#b84949",
+    "orange": "#9a7345",
+    "yellow": "#987b40",
+    "green": "#6d7f59",
+    "blue": "#445987",
+    "purple": "#655683",
+    "magenta": "#8a3a5a"
+  }
+}

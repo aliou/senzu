@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "dark",
+  "name": "Senzu HC",
+  "colors": {
+    "background": "#060606",
+    "backgroundSecondary": "#0e0e0e",
+    "text": "#f8f8f0",
+    "selection": "#303030",
+    "loader": "#98b0e0",
+    "red": "#ff5050",
+    "orange": "#ffc800",
+    "yellow": "#ffe080",
+    "green": "#c0d880",
+    "blue": "#98b0e0",
+    "purple": "#d8c8ff",
+    "magenta": "#ff60c0"
+  }
+}

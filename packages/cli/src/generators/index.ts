@@ -7,6 +7,7 @@ import { HunkGenerator } from "./hunk";
 import { LazygitGenerator } from "./lazygit";
 import { NeovimGenerator } from "./neovim";
 import { PiGenerator } from "./pi";
+import { RaycastGenerator } from "./raycast";
 import { TextMateGenerator } from "./textmate";
 import { TmuxGenerator } from "./tmux";
 import { WeztermGenerator } from "./wezterm";
@@ -23,6 +24,7 @@ export { HunkGenerator } from "./hunk";
 export { LazygitGenerator } from "./lazygit";
 export { NeovimGenerator } from "./neovim";
 export { PiGenerator } from "./pi";
+export { RaycastGenerator } from "./raycast";
 export { TextMateGenerator } from "./textmate";
 export { TmuxGenerator } from "./tmux";
 export { WeztermGenerator } from "./wezterm";
@@ -43,6 +45,7 @@ for (const g of [
   new NeovimGenerator(),
   new ZedGenerator(),
   new PiGenerator(),
+  new RaycastGenerator(),
   new TextMateGenerator(),
   new BatGenerator(),
   new FzfGenerator(),

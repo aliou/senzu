@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Cold Light",
+  "colors": {
+    "background": "#edf6ff",
+    "backgroundSecondary": "#deebf5",
+    "text": "#1f2a34",
+    "selection": "#b8d0e6",
+    "loader": "#2952a3",
+    "red": "#ff3333",
+    "orange": "#a66510",
+    "yellow": "#876820",
+    "green": "#386014",
+    "blue": "#2952a3",
+    "purple": "#6a4abd",
+    "magenta": "#9a368c"
+  }
+}

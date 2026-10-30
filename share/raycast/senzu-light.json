@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Light",
+  "colors": {
+    "background": "#f5e6d3",
+    "backgroundSecondary": "#e8d5c0",
+    "text": "#252525",
+    "selection": "#d7af87",
+    "loader": "#2952a3",
+    "red": "#ff3333",
+    "orange": "#a66510",
+    "yellow": "#876820",
+    "green": "#386014",
+    "blue": "#2952a3",
+    "purple": "#6a4abd",
+    "magenta": "#b8005f"
+  }
+}

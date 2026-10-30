@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "dark",
+  "name": "Senzu Warm",
+  "colors": {
+    "background": "#1c1510",
+    "backgroundSecondary": "#241a10",
+    "text": "#edd9b8",
+    "selection": "#4a3828",
+    "loader": "#8197bf",
+    "red": "#d74545",
+    "orange": "#ffaf00",
+    "yellow": "#fad07a",
+    "green": "#99ad6a",
+    "blue": "#8197bf",
+    "purple": "#c6b6ee",
+    "magenta": "#e85a8c"
+  }
+}

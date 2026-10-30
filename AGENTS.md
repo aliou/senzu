@@ -28,11 +28,11 @@
   - `nix/home-manager.nix` — Nix home-manager module for installing themes and the probe
   - `flake.nix` — Nix flake: themes package, appearance probe, devshell with lefthook
 
-- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, herdr, neovim, pi, textmate, bat, fzf) produce one file per variant. Family generators (zed) produce a single file from all palettes.
+- **Generator contract**: Each generator implements `emit(palettes[]): OutputFile[]`. Per-palette generators (ghostty, wezterm, wterm, tmux, herdr, neovim, pi, textmate, bat, fzf, raycast) produce one file per variant. Family generators (zed) produce a single file from all palettes.
 
 - **Variants**: 12 total — `senzu` (default dark), `senzu-mono`, `senzu-light`, `senzu-mono-light`, `senzu-muted`, `senzu-muted-light`, `senzu-hc`, `senzu-hc-light`, `senzu-warm`, `senzu-warm-light`, `senzu-cold`, `senzu-cold-light`.
 
-- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `herdr` (TOML config snippets plus safe config patching), `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`).
+- **Targets**: `ghostty`, `wezterm` (TOML only — the canonical format for `~/.config/wezterm/colors/`), `wterm`, `tmux`, `herdr` (TOML config snippets plus safe config patching), `neovim`, `zed` (theme family JSON), `pi` (Pi coding agent theme JSON with var references), `textmate` (Shiki/VS Code JSON), `bat` (TextMate `.tmTheme` for bat/delta), `fzf` (`--color` snippets sourced into `FZF_DEFAULT_OPTS`), `raycast` (Theme Studio JSON for manual paste-import; Raycast has no on-disk theme dir).
 
 - **Versioning**: The version in `package.json` is the single source. The flake reads it for the themes package, and `native/Cargo.toml` must match it because the probe binary is published under the release tag (`just sync-version`). Use changesets to bump.
 
