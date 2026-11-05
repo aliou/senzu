@@ -1,0 +1,21 @@
+{
+  "author": "Aliou Diallo",
+  "authorUsername": "aliou",
+  "version": 1,
+  "appearance": "light",
+  "name": "Senzu Dusk Light",
+  "colors": {
+    "background": "#f6f3fe",
+    "backgroundSecondary": "#e8e7f5",
+    "text": "#2a2633",
+    "selection": "#cec8e5",
+    "loader": "#2952a3",
+    "red": "#ff3333",
+    "orange": "#a66510",
+    "yellow": "#876820",
+    "green": "#386014",
+    "blue": "#2952a3",
+    "purple": "#6a4abd",
+    "magenta": "#a8366e"
+  }
+}

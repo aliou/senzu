@@ -121,4 +121,18 @@ Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown 
 
 </details>
 
+<details>
+<summary>Senzu Dusk</summary>
+
+![Senzu Dusk theme preview](.github/assets/previews/senzu-dusk.svg)
+
+</details>
+
+<details>
+<summary>Senzu Dusk Light</summary>
+
+![Senzu Dusk Light theme preview](.github/assets/previews/senzu-dusk-light.svg)
+
+</details>
+
 <!-- END THEME PREVIEWS -->
