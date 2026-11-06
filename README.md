@@ -135,4 +135,18 @@ Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown 
 
 </details>
 
+<details>
+<summary>Senzu Tera</summary>
+
+![Senzu Tera theme preview](.github/assets/previews/senzu-tera.svg)
+
+</details>
+
+<details>
+<summary>Senzu Tera Light</summary>
+
+![Senzu Tera Light theme preview](.github/assets/previews/senzu-tera-light.svg)
+
+</details>
+
 <!-- END THEME PREVIEWS -->

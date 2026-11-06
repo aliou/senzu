@@ -31,7 +31,9 @@
       "./share/pi/senzu-cold.json",
       "./share/pi/senzu-cold-light.json",
       "./share/pi/senzu-dusk.json",
-      "./share/pi/senzu-dusk-light.json"
+      "./share/pi/senzu-dusk-light.json",
+      "./share/pi/senzu-tera.json",
+      "./share/pi/senzu-tera-light.json"
     ]
   },
   "devDependencies": {
