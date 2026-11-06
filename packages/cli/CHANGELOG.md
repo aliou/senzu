@@ -1,5 +1,13 @@
 # @senzu/cli
 
+## 0.13.0
+
+### Minor Changes
+
+- 83b7b82: Add the dusk variants, dark and light, with violet-tinted neutrals.
+- fa0aa42: Add a `raycast` target that emits Raycast Theme Studio JSON for every variant in `share/raycast/`. Raycast keeps custom themes in internal storage instead of a config directory, so the files are imported by pasting them into Theme Studio (Raycast Pro required).
+- 40d685f: Add the tera variants, dark and light, based on the terafox palette from nightfox.nvim.
+
 ## 0.12.1
 
 ### Patch Changes
