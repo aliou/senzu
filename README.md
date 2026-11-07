@@ -10,13 +10,9 @@ Install one explicit variant into a regular Herdr config file:
 senzu install herdr senzu-muted
 ```
 
-Senzu preserves unrelated TOML settings and comments, creates a timestamped
-backup, and prints the command for reloading Herdr. Use `--dry-run` to preview
-the updated config. Senzu refuses to modify symlinked configs unless `--force`
-is set.
+Senzu preserves unrelated TOML settings and comments, creates a timestamped backup, and prints the command for reloading Herdr. Use `--dry-run` to preview the updated config. Senzu refuses to modify symlinked configs unless `--force` is set.
 
-For a Nix-managed Herdr config, consume the theme attrset instead of modifying
-the generated config file:
+For a Nix-managed Herdr config, consume the theme attrset instead of modifying the generated config file:
 
 ```nix
 ad.programs.herdr.settings.theme = inputs.senzu.lib.herdrTheme "senzu-muted";
@@ -26,28 +22,19 @@ All variants are also available under `inputs.senzu.lib.herdrThemes`.
 
 ## Raycast
 
-Raycast stores custom themes in its internal storage and does not read theme
-files from disk, so `share/raycast/<variant>.json` must be imported by hand
-(Raycast Pro required):
+Raycast stores custom themes in its internal storage and does not read theme files from disk, so `share/raycast/<variant>.json` must be imported by hand (Raycast Pro required):
 
 1. Run the `Show Theme Studio` command in Raycast.
-2. Right-click the theme list and add a new theme, then paste the contents of
-   the variant JSON into the Theme Studio editor (or use "Copy as JSON" on an
-   existing theme as a shape reference).
+2. Right-click the theme list and add a new theme, then paste the contents of the variant JSON into the Theme Studio editor (or use "Copy as JSON" on an existing theme as a shape reference).
 
 ## Hunk
 
-Hunk reads themes from its TOML config rather than standalone files, so senzu
-ships merge-ready snippets in `share/hunk/`. For hunk >= 0.18, copy the tables
-from `share/hunk/<variant>.toml` into `~/.config/hunk/config.toml` and set
-`theme = "<variant>"`. For hunk <= 0.17, use `share/hunk/<variant>.legacy.toml`
-instead, which fills the single-slot `[custom_theme]` table (`theme = "custom"`).
+Hunk reads themes from its TOML config rather than standalone files, so senzu ships merge-ready snippets in `share/hunk/`. For hunk >= 0.18, copy the tables from `share/hunk/<variant>.toml` into `~/.config/hunk/config.toml` and set `theme = "<variant>"`. For hunk <= 0.17, use `share/hunk/<variant>.legacy.toml` instead, which fills the single-slot `[custom_theme]` table (`theme = "custom"`).
 
 <!-- BEGIN THEME PREVIEWS -->
 ## Theme previews
 
-Run `pnpm readme:previews` to regenerate these previews after changing or adding palettes.
-Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown by `senzu preview`.
+Run `pnpm readme:previews` to regenerate these previews after changing or adding palettes. Each preview uses the same `packages/cli/src/core/swatch.ts` code snippet shown by `senzu preview`.
 
 ### Senzu
 

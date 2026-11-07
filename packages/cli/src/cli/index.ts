@@ -36,14 +36,12 @@ function readPackageVersion(): string {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 6; i++) {
     const pkgPath = join(dir, "package.json");
-    try {
+    if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
         name?: string;
         version?: string;
       };
       if (pkg.name === "@senzu/cli") return pkg.version ?? "0.0.0";
-    } catch {
-      // not found here; keep walking up
     }
     const parent = dirname(dir);
     if (parent === dir) break;

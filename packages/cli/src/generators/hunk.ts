@@ -65,10 +65,10 @@ function resolveSlots(palette: Palette): [string, string][] {
   const accent = (
     palette.ui["panel.focused_border"] ?? palette.cursor
   ).toLowerCase();
-  const added = palette.ui["version_control_added"] ?? palette.ansi.green;
-  const removed = palette.ui["version_control_deleted"] ?? palette.ansi.red;
+  const added = palette.ui.version_control_added ?? palette.ansi.green;
+  const removed = palette.ui.version_control_deleted ?? palette.ansi.red;
   const modified =
-    palette.ui["version_control_modified"] ?? palette.semantic.warning;
+    palette.ui.version_control_modified ?? palette.semantic.warning;
   const renamed = palette.ui.renamed ?? palette.semantic.info;
   const panelAlt = elevatedSurface(palette);
   // Hunk's built-ins tint added/removed content slightly stronger than the
