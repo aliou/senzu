@@ -326,10 +326,6 @@ function getDefaultInstallDir(target: string): string {
   switch (target) {
     case "ghostty":
       return join(xdgConfig, "ghostty", "themes");
-    case "wezterm":
-      return join(xdgConfig, "wezterm", "colors");
-    case "tmux":
-      return join(home, ".tmux", "themes", "senzu");
     case "neovim":
       return join(
         xdgData,
@@ -388,7 +384,6 @@ Examples:
   senzu generate ghostty           Generate only Ghostty themes
   senzu list                       List palettes and targets
   senzu install ghostty            Install all Ghostty variants to ~/.config/ghostty/themes/
-  senzu install wezterm senzu-mono   Install one variant to ~/.config/wezterm/colors/
   senzu install herdr senzu-muted  Update Herdr config after creating a backup
   senzu preview                    Interactively browse and preview palettes
   senzu preview senzu-hc-light     Preview a specific palette

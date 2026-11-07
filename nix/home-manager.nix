@@ -8,26 +8,6 @@
 let
   cfg = config.programs.senzu;
 
-  # All variant names produced by the generators.
-  allVariants = [
-    "senzu"
-    "senzu-mono"
-    "senzu-light"
-    "senzu-mono-light"
-    "senzu-muted"
-    "senzu-muted-light"
-    "senzu-hc"
-    "senzu-hc-light"
-    "senzu-warm"
-    "senzu-warm-light"
-    "senzu-cold"
-    "senzu-cold-light"
-    "senzu-dusk"
-    "senzu-dusk-light"
-    "senzu-tera"
-    "senzu-tera-light"
-  ];
-
   # Automatically derive the themes package from the flake input.
   defaultThemesPackage =
     if inputs != null && inputs ? senzu then
@@ -42,33 +22,16 @@ let
     else
       null;
 
-  # Helper to build the list of variants to install for a program.
-  # If `variants` is null, install all. Otherwise install only the listed ones.
-  variantsToInstall = variants:
-    if variants == null then allVariants else variants;
-
-  # Helper that builds home.file entries for a given target dir, source subdir,
-  # and variant list.
-  mkFileEntries = sourceDir: destDir: variants: ext:
-    lib.listToAttrs (
-      map (name: {
-        name = "${destDir}/${name}${ext}";
-        value = {
-          source = "${sourceDir}/${name}${ext}";
-        };
-      }) (variantsToInstall variants)
-    );
-
-  # Yazi flavors are directories named <variant>.yazi.
-  mkYaziEntries = sourceDir: destDir: variants:
-    lib.listToAttrs (
-      map (name: {
-        name = "${destDir}/${name}.yazi";
-        value = {
-          source = "${sourceDir}/${name}.yazi";
-        };
-      }) (variantsToInstall variants)
-    );
+  # Install every file of a generated target directory. Enumerating the
+  # store path at eval time (no IFD) means new variants and targets show up
+  # without any list to maintain.
+  mkTargetEntries = target: destDir:
+    lib.mapAttrs'
+      (name: _:
+        lib.nameValuePair "${destDir}/${name}" {
+          source = "${cfg.package}/share/${target}/${name}";
+        })
+      (builtins.readDir "${cfg.package}/share/${target}");
 in
 {
   options.programs.senzu = {
@@ -83,106 +46,19 @@ in
       '';
     };
 
-    ghostty = {
-      enable = lib.mkEnableOption "Ghostty terminal themes" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = ''
-          Which variants to install. Null installs all.
-          Example: [ "senzu" "senzu-mono" ]
-        '';
-      };
+    # Variants used by tools that follow the terminal's appearance. Tools read
+    # SENZU_VARIANT (exported by the shell hook); bat, delta and fzf setups
+    # reference these names when mapping dark/light.
+    darkVariant = lib.mkOption {
+      type = lib.types.str;
+      default = "senzu";
+      description = "Senzu variant used in dark mode (bat theme name / fzf snippet).";
     };
 
-    wezterm = {
-      enable = lib.mkEnableOption "WezTerm terminal themes (TOML)" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = "Which variants to install. Null installs all.";
-      };
-    };
-
-    lazygit = {
-      enable = lib.mkEnableOption "Lazygit theme overrides" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = "Which variants to install. Null installs all.";
-      };
-    };
-
-    tmux = {
-      enable = lib.mkEnableOption "tmux themes" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = "Which variants to install. Null installs all.";
-      };
-    };
-
-    neovim = {
-      enable = lib.mkEnableOption "Neovim colorschemes" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = "Which variants to install. Null installs all.";
-      };
-    };
-
-    zed = {
-      enable = lib.mkEnableOption "Zed editor theme" // { default = true; };
-      # Zed uses a single family file containing all variants; no per-variant selection.
-    };
-
-    pi = {
-      enable = lib.mkEnableOption "Pi coding agent themes" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = "Which variants to install. Null installs all.";
-      };
-    };
-
-    bat = {
-      enable = lib.mkEnableOption "bat / delta themes (TextMate .tmTheme)" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = ''
-          Which variants to install. Null installs all.
-          After installing (or changing variants), run `bat cache --build` so
-          bat picks up the new themes from ~/.config/bat/themes/.
-        '';
-      };
-    };
-
-    fzf = {
-      enable = lib.mkEnableOption "fzf color snippets" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = ''
-          Which variants to install. Null installs all.
-          Each variant is a shell snippet in ~/.config/fzf/ that appends a
-          Senzu --color spec to FZF_DEFAULT_OPTS when sourced.
-        '';
-      };
-    };
-
-    yazi = {
-      enable = lib.mkEnableOption "Yazi file manager flavors" // { default = true; };
-      variants = lib.mkOption {
-        type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        default = null;
-        description = ''
-          Which variants to install. Null installs all.
-          Select an installed flavor in ~/.config/yazi/theme.toml, for example:
-          [flavor]
-          dark = "senzu"
-        '';
-      };
+    lightVariant = lib.mkOption {
+      type = lib.types.str;
+      default = "senzu-light";
+      description = "Senzu variant used in light mode (bat theme name / fzf snippet).";
     };
 
     shell = {
@@ -225,71 +101,35 @@ in
     ];
 
     home.file = lib.mkMerge [
-      # Ghostty themes
-      (lib.mkIf cfg.ghostty.enable (
-        mkFileEntries "${cfg.package}/share/ghostty"
-          "${config.xdg.configHome}/ghostty/themes" cfg.ghostty.variants ""
-      ))
-
-      # WezTerm themes (TOML)
-      (lib.mkIf cfg.wezterm.enable (
-        mkFileEntries "${cfg.package}/share/wezterm"
-          "${config.xdg.configHome}/wezterm/colors" cfg.wezterm.variants ".toml"
-      ))
+      # Ghostty themes (no extension, installed under themes/)
+      (mkTargetEntries "ghostty" "${config.xdg.configHome}/ghostty/themes")
 
       # Lazygit theme overrides
-      (lib.mkIf cfg.lazygit.enable (
-        mkFileEntries "${cfg.package}/share/lazygit"
-          "${config.xdg.configHome}/lazygit" cfg.lazygit.variants ".yml"
-      ))
-
-      # tmux themes
-      (lib.mkIf cfg.tmux.enable (
-        mkFileEntries "${cfg.package}/share/tmux"
-          "${config.home.homeDirectory}/.tmux/themes/senzu" cfg.tmux.variants ".tmuxtheme"
-      ))
+      (mkTargetEntries "lazygit" "${config.xdg.configHome}/lazygit")
 
       # Neovim colorschemes (as opt plugin in pack path)
-      (lib.mkIf cfg.neovim.enable (
-        mkFileEntries "${cfg.package}/share/neovim"
-          "${config.xdg.dataHome}/nvim/site/pack/senzu/opt/senzu/colors" cfg.neovim.variants ".lua"
-      ))
+      (mkTargetEntries "neovim" "${config.xdg.dataHome}/nvim/site/pack/senzu/opt/senzu/colors")
 
-      # Zed theme family (single file)
-      (lib.mkIf cfg.zed.enable {
-        "${config.home.homeDirectory}/.config/zed/themes/senzu.json".source =
-          "${cfg.package}/share/zed/senzu.json";
-      })
+      # Zed theme family (single file containing all variants)
+      (mkTargetEntries "zed" "${config.home.homeDirectory}/.config/zed/themes")
 
-      # Pi themes
-      (lib.mkIf cfg.pi.enable (
-        mkFileEntries "${cfg.package}/share/pi"
-          "${config.xdg.configHome}/pi/themes" cfg.pi.variants ".json"
-      ))
+      # Pi coding agent themes
+      (mkTargetEntries "pi" "${config.xdg.configHome}/pi/themes")
 
       # bat / delta themes (TextMate .tmTheme)
-      (lib.mkIf cfg.bat.enable (
-        mkFileEntries "${cfg.package}/share/bat"
-          "${config.xdg.configHome}/bat/themes" cfg.bat.variants ".tmTheme"
-      ))
+      (mkTargetEntries "bat" "${config.xdg.configHome}/bat/themes")
 
       # fzf color snippets
-      (lib.mkIf cfg.fzf.enable (
-        mkFileEntries "${cfg.package}/share/fzf"
-          "${config.xdg.configHome}/fzf" cfg.fzf.variants ".sh"
-      ))
+      (mkTargetEntries "fzf" "${config.xdg.configHome}/fzf")
 
-      # Yazi flavors
-      (lib.mkIf cfg.yazi.enable (
-        mkYaziEntries "${cfg.package}/share/yazi"
-          "${config.xdg.configHome}/yazi/flavors" cfg.yazi.variants
-      ))
+      # Yazi flavors (directories named <variant>.yazi)
+      (mkTargetEntries "yazi" "${config.xdg.configHome}/yazi/flavors")
 
       # Appearance hook and compatibility shim. Source the hook from your zsh
       # config to keep bat, delta and fzf on the current variant:
       #
       #   export SENZU_SHARE_DIR=${cfg.package}/share
-      #   source ${config.xdg.configHome}/senzu/senzu-hook.zsh senzu senzu-light
+      #   source ${config.xdg.configHome}/senzu/senzu-hook.zsh
       (lib.mkIf cfg.shell.enable {
         "${config.xdg.configHome}/senzu/senzu-hook.zsh".source =
           "${cfg.package}/share/shell/senzu-hook.zsh";

@@ -9,8 +9,6 @@ import { NeovimGenerator } from "./neovim";
 import { PiGenerator } from "./pi";
 import { RaycastGenerator } from "./raycast";
 import { TextMateGenerator } from "./textmate";
-import { TmuxGenerator } from "./tmux";
-import { WeztermGenerator } from "./wezterm";
 import { WtermGenerator } from "./wterm";
 import { YaziGenerator } from "./yazi";
 import { ZedGenerator } from "./zed";
@@ -26,8 +24,6 @@ export { NeovimGenerator } from "./neovim";
 export { PiGenerator } from "./pi";
 export { RaycastGenerator } from "./raycast";
 export { TextMateGenerator } from "./textmate";
-export { TmuxGenerator } from "./tmux";
-export { WeztermGenerator } from "./wezterm";
 export { WtermGenerator } from "./wterm";
 export { YaziGenerator } from "./yazi";
 export { ZedGenerator } from "./zed";
@@ -36,10 +32,8 @@ const generators: Map<string, Generator> = new Map();
 
 for (const g of [
   new GhosttyGenerator(),
-  new WeztermGenerator(),
   new WtermGenerator(),
   new LazygitGenerator(),
-  new TmuxGenerator(),
   new HerdrGenerator(),
   new HunkGenerator(),
   new NeovimGenerator(),
