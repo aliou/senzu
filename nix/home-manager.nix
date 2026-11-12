@@ -22,16 +22,19 @@ let
     else
       null;
 
-  # Install every file of a generated target directory. Enumerating the
-  # store path at eval time (no IFD) means new variants and targets show up
-  # without any list to maintain.
+  # Install every file of a generated target directory. File names are
+  # enumerated from the flake's own share/ source, never from the built
+  # package: readDir on a derivation output is IFD and breaks cross-system
+  # eval (deploying a Linux host from macOS). The themes derivation copies
+  # share/ verbatim, so the source file set equals the built one. Overriding
+  # package with a differently shaped package is not supported.
   mkTargetEntries = target: destDir:
     lib.mapAttrs'
       (name: _:
         lib.nameValuePair "${destDir}/${name}" {
           source = "${cfg.package}/share/${target}/${name}";
         })
-      (builtins.readDir "${cfg.package}/share/${target}");
+      (builtins.readDir (../share + "/${target}"));
 in
 {
   options.programs.senzu = {
